@@ -1,7 +1,7 @@
 # 🌪️ TIPPING POINT
 ### *The Future is Negotiated.*
 
-![Tipping Point Banner](banner-filename.png)
+![Tipping-Point.Logo)
 
 **Tipping Point** is a high-stakes geopolitical simulation where structural power, economic theory, and human friction collide. You are not just a player; you are a function of the state.
 
