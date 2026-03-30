@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIPPING POINT — Global Crisis Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04050a;--bg2:#080b12;--bg3:#0d1018;
+  --surface:#111520;--surface2:#161c28;
+  --border:#1a2130;--border2:#253040;
+  --text:#c8d4e8;--text2:#5e6e88;--text3:#2e3a50;
+  --red:#e8321a;--red2:#ff4422;
+  --amber:#e8a01a;--amber2:#ffc040;
+  --green:#18e880;--green2:#00ff88;
+  --blue:#1a7de8;--teal:#0eb8a8;
+  --purple:#8b5cf6;--purple2:#a78bfa;
+  --hawk:#e84a1a;--tech:#1a8be8;
+  --nuclear:#ffd700;--war:#8b0000;
+  --parchment:#f5f0e8;
+  --fn:'IBM Plex Mono',monospace;
+  --fd:'Bebas Neue',sans-serif;
+  --fp:'Playfair Display',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--fn);font-size:13px;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.03) 3px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9998;}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;transition:opacity .4s,transform .4s;}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.98);}
+
+/* SCROLLABLE SCREENS */
+.screen.scrollable{align-items:flex-start;overflow-y:auto;}
+
+/* BUTTONS */
+.btn{font-family:var(--fn);font-size:10px;text-transform:uppercase;letter-spacing:2px;padding:11px 24px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;clip-path:polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%);}
+.btn:hover{background:var(--surface2);color:var(--text);}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-red{border-color:var(--red);color:var(--red);background:rgba(232,50,26,.05);}
+.btn-red:hover{background:var(--red);color:#fff;}
+.btn-green{border-color:var(--green);color:var(--green);background:rgba(24,232,128,.04);}
+.btn-green:hover{background:var(--green);color:var(--bg);}
+.btn-amber{border-color:var(--amber);color:var(--amber);}
+.btn-amber:hover{background:var(--amber);color:var(--bg);}
+.btn-nuclear{border-color:var(--nuclear);color:var(--nuclear);background:rgba(255,215,0,.05);animation:nuclear-glow 2s infinite;}
+@keyframes nuclear-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.2)}50%{box-shadow:0 0 12px 3px rgba(255,215,0,.15)}}
+
+/* ═══════════════ LOBBY ═══════════════ */
+#lobbyScreen{flex-direction:column;overflow:hidden;background:var(--bg);}
+.lobby-bg{position:absolute;inset:0;background:radial-gradient(ellipse 90% 50% at 50% 110%,rgba(232,50,26,.07),transparent 65%),radial-gradient(ellipse 50% 40% at 15% 50%,rgba(26,125,232,.04),transparent 55%);}
+.lobby-title{font-family:var(--fd);font-size:clamp(52px,7vw,92px);letter-spacing:10px;line-height:.95;text-align:center;position:relative;z-index:2;}
+.lobby-title em{color:var(--red);font-style:normal;}
+.lobby-sub{font-size:10px;letter-spacing:4px;color:var(--text2);text-transform:uppercase;margin-top:10px;text-align:center;position:relative;z-index:2;}
+
+/* WAR ROOM */
+.war-room{display:flex;gap:clamp(20px,3vw,48px);align-items:flex-end;justify-content:center;position:relative;z-index:2;margin:clamp(20px,3vh,44px) 0;}
+.humanoid{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:transform .3s;}
+.humanoid:hover{transform:translateY(-10px);}
+.humanoid.sel .h-name{color:var(--h-color)!important;}
+.humanoid.sel .h-svg-wrap{filter:drop-shadow(0 0 18px var(--h-color));}
+.h-svg-wrap{transition:filter .3s;}
+.h-name{font-family:var(--fd);font-size:17px;letter-spacing:2px;color:var(--text2);transition:color .2s;}
+.h-sub{font-size:9px;color:var(--text3);letter-spacing:1px;text-align:center;max-width:88px;line-height:1.4;}
+.h-lean{font-size:8px;padding:2px 7px;border:1px solid currentColor;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+
+/* ═══════════════ IDEOLOGY ═══════════════ */
+#ideologyScreen{background:var(--bg);}
+.ideo-split{display:grid;grid-template-columns:1fr 1fr;width:100%;height:100%;}
+.ideo-side{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 40px;cursor:pointer;position:relative;overflow:hidden;transition:background .3s;}
+.ideo-side::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s;}
+.ideo-side.hawk::before{background:radial-gradient(ellipse at center,rgba(232,74,26,.12),transparent 70%);}
+.ideo-side.tech::before{background:radial-gradient(ellipse at center,rgba(26,139,232,.12),transparent 70%);}
+.ideo-side:hover::before,.ideo-side.sel::before{opacity:1;}
+.ideo-side.hawk{color:var(--hawk);border-right:1px solid var(--border);}
+.ideo-side.tech{color:var(--tech);}
+.ideo-side.sel{outline:2px solid currentColor;outline-offset:-2px;}
+.ideo-icon{font-size:56px;margin-bottom:18px;opacity:.85;}
+.ideo-name{font-family:var(--fd);font-size:48px;letter-spacing:4px;margin-bottom:6px;}
+.ideo-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;opacity:.55;margin-bottom:20px;}
+.ideo-desc{font-size:11px;color:var(--text2);line-height:1.8;max-width:300px;text-align:center;}
+.ideo-traits{margin-top:18px;display:flex;flex-direction:column;gap:7px;width:100%;max-width:270px;}
+.ideo-trait{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text2);}
+.ideo-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.vs-divider{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--fd);font-size:24px;color:var(--text3);z-index:2;background:var(--bg);padding:6px 3px;letter-spacing:2px;}
+
+/* ═══════════════ NATION ═══════════════ */
+#nationScreen{background:var(--bg);align-items:flex-start;}
+.page-wrap{width:100%;max-width:960px;margin:0 auto;padding:36px 20px;display:flex;flex-direction:column;gap:22px;}
+.page-eyebrow{font-size:9px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;}
+.page-title{font-family:var(--fd);font-size:38px;letter-spacing:4px;}
+.page-sub{font-size:10px;color:var(--text2);line-height:1.7;max-width:600px;}
+.nation-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+.n-card{background:var(--surface);border:1px solid var(--border);padding:18px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
+.n-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--n-color);transform:scaleX(0);transform-origin:left;transition:transform .3s;}
+.n-card:hover::before,.n-card.sel::before{transform:scaleX(1);}
+.n-card.sel{border-color:var(--n-color);}
+.n-flag{font-size:28px;margin-bottom:10px;}
+.n-name{font-family:var(--fd);font-size:20px;letter-spacing:2px;}
+.n-region{font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.n-bars{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.n-bar-row{display:flex;justify-content:space-between;align-items:center;font-size:8px;color:var(--text2);}
+.n-bar-lbl{letter-spacing:.5px;text-transform:uppercase;}
+.n-bar-track{width:55px;height:3px;background:var(--border);}
+.n-bar-fill{height:100%;background:var(--n-color);}
+.n-geo{font-size:9px;color:var(--text2);line-height:1.5;border-top:1px solid var(--border);padding-top:8px;}
+.n-passive{font-size:9px;color:var(--n-color);margin-top:6px;}
+
+/* ═══════════════ GOAL ═══════════════ */
+#goalScreen{background:var(--bg);}
+.goal-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;padding:36px 20px;max-width:680px;width:100%;}
+.goal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+.goal-card{background:var(--surface);border:1px solid var(--border);padding:16px;cursor:pointer;transition:all .15s;}
+.goal-card:hover{border-color:var(--border2);}
+.goal-card.sel{border-color:var(--amber);background:rgba(232,160,26,.04);}
+.goal-icon{font-size:22px;margin-bottom:7px;}
+.goal-name{font-family:var(--fd);font-size:17px;letter-spacing:1px;margin-bottom:4px;}
+.goal-desc{font-size:9px;color:var(--text2);line-height:1.6;}
+
+/* ═══════════════ MAIN GAME ═══════════════ */
+#gameScreen{flex-direction:column;align-items:stretch;background:var(--bg);}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;gap:14px;padding:8px 18px;border-bottom:1px solid var(--border);background:rgba(4,5,10,.96);backdrop-filter:blur(8px);flex-shrink:0;flex-wrap:wrap;}
+.tb-logo{font-family:var(--fd);font-size:18px;letter-spacing:4px;display:flex;align-items:center;gap:7px;}
+.tb-pulse{width:7px;height:7px;background:var(--red);border-radius:50%;animation:tbpulse 1.5s infinite;}
+@keyframes tbpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(232,50,26,.4)}60%{opacity:.5;box-shadow:0 0 0 5px transparent}}
+.tb-mid{display:flex;align-items:center;gap:16px;flex:1;justify-content:center;}
+.round-pips{display:flex;gap:3px;align-items:center;}
+.rpip{height:3px;width:14px;background:var(--border2);transition:background .3s;}
+.rpip.done{background:var(--green);}
+.rpip.active{background:var(--amber);animation:pip-blink 1s infinite;}
+.rpip.war{background:var(--red);}
+.rpip.nuclear{background:var(--nuclear);}
+@keyframes pip-blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tb-phase{font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
+.tb-timer{font-family:var(--fd);font-size:20px;letter-spacing:2px;color:var(--amber);min-width:48px;}
+.tb-timer.urgent{color:var(--red);animation:tbpulse 0.6s infinite;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.player-chip{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);padding:5px 11px;font-size:10px;}
+.ideo-badge{font-size:8px;padding:3px 8px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid currentColor;}
+.ideo-badge.hawk{color:var(--hawk);}
+.ideo-badge.tech{color:var(--tech);}
+
+/* TICKER */
+.ticker-bar{height:26px;overflow:hidden;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;align-items:center;}
+.ticker-inner{display:flex;gap:28px;animation:ticker 28s linear infinite;white-space:nowrap;padding:0 10px;}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{font-size:10px;color:var(--text2);}
+.ti-up{color:var(--red);}
+.ti-dn{color:var(--green);}
+
+/* LAYOUT */
+.game-grid{display:grid;grid-template-columns:250px 1fr 210px;flex:1;overflow:hidden;min-height:0;}
+
+/* PANELS */
+.panel{overflow-y:auto;display:flex;flex-direction:column;}
+.panel-l{border-right:1px solid var(--border);background:var(--bg2);}
+.panel-r{border-left:1px solid var(--border);background:var(--bg2);}
+.panel-c{background:var(--bg);}
+
+.p-hdr{padding:11px 15px;border-bottom:1px solid var(--border);font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;background:inherit;z-index:5;}
+
+/* STABILITY */
+.stab-wrap{padding:12px;}
+.stab-row{margin-bottom:9px;}
+.stab-label{display:flex;justify-content:space-between;font-size:9px;color:var(--text2);margin-bottom:3px;}
+.stab-val{font-weight:700;}
+.stab-track{height:5px;background:var(--border);overflow:hidden;}
+.stab-fill{height:100%;transition:width .7s cubic-bezier(.4,2,.6,1),background .4s;}
+
+/* GSI DISPLAY */
+.gsi-box{padding:12px 15px;border-bottom:1px solid var(--border);}
+.gsi-num{font-family:var(--fd);font-size:34px;line-height:1;}
+.gsi-lbl{font-size:8px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+
+/* STRESS FIGURE */
+.stress-box{display:flex;align-items:center;gap:10px;margin:10px 12px;padding:10px;background:var(--surface);border:1px solid var(--border);}
+.stress-info-name{font-size:9px;color:var(--text2);}
+.stress-info-status{font-size:10px;font-weight:700;margin-top:2px;}
+.stress-info-status.ok{color:var(--green);}
+.stress-info-status.warn{color:var(--amber);}
+.stress-info-status.crit{color:var(--red);animation:tbpulse .8s infinite;}
+
+/* TIPPING BOX */
+.tipping-box{margin:8px 12px;padding:10px;background:rgba(232,50,26,.08);border:1px solid var(--red);animation:tipping-pulse 2s infinite;}
+@keyframes tipping-pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,50,26,.3)}50%{box-shadow:0 0 10px 2px rgba(232,50,26,.12)}}
+
+/* NUCLEAR METER */
+.nuclear-bar{margin:8px 12px;padding:10px;background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.2);}
+.nuclear-label{font-size:8px;color:var(--nuclear);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.nuclear-track{height:4px;background:var(--border);}
+.nuclear-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--amber),var(--nuclear));transition:width .6s;}
+
+/* MANDATE */
+.mandate-box{padding:12px;margin-top:auto;}
+
+/* SCENARIO */
+.scenario-section{padding:16px;}
+.scenario-card{background:var(--surface);border:1px solid var(--border);}
+.sc-header{padding:14px 18px;border-bottom:1px solid var(--border);}
+.sc-sev{font-size:8px;letter-spacing:2px;text-transform:uppercase;display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.sc-sev-dot{width:4px;height:4px;border-radius:50%;background:currentColor;}
+.sev-crit{color:var(--red);}
+.sev-high{color:var(--amber);}
+.sev-med{color:var(--teal);}
+.sc-title{font-family:var(--fp);font-size:19px;font-weight:700;line-height:1.2;margin-bottom:7px;}
+.sc-body{font-size:10px;color:var(--text2);line-height:1.7;}
+
+/* ORACLE BRIEF */
+.oracle-brief{margin:0 16px 12px;padding:12px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);border-left:3px solid var(--purple);position:relative;overflow:hidden;}
+.oracle-brief::before{content:'';position:absolute;inset:0;background:rgba(139,92,246,.03);animation:oracle-bg 3s ease-in-out infinite;}
+@keyframes oracle-bg{0%,100%{opacity:1}50%{opacity:0}}
+.ob-label{font-size:8px;color:var(--purple2);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.ob-pulse{width:6px;height:6px;background:var(--purple);border-radius:50%;animation:tbpulse 1.2s infinite;}
+.ob-context{font-size:10px;color:var(--text2);line-height:1.6;margin-bottom:8px;}
+.ob-sug{display:flex;flex-direction:column;gap:5px;margin-top:8px;border-top:1px solid rgba(139,92,246,.2);padding-top:8px;}
+.ob-sug-row{font-size:9px;line-height:1.5;}
+.ob-hawk{color:var(--hawk);}
+.ob-tech{color:var(--tech);}
+
+/* CRITICAL ORACLE */
+.oracle-brief.crit{background:rgba(232,50,26,.07);border-color:rgba(232,50,26,.3);border-left-color:var(--red);animation:tipping-pulse 1.5s infinite;}
+.oracle-brief.crit .ob-label{color:var(--red);}
+.oracle-brief.crit .ob-pulse{background:var(--red);}
+
+/* DECISIONS */
+.dec-section{padding:0 16px 14px;}
+.dec-title-row{font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.dec-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.dec-card{background:var(--surface);border:2px solid var(--border);padding:13px;cursor:pointer;transition:all .12s;position:relative;}
+.dec-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.dec-card.sel{border-color:var(--green);}
+.dec-card.sel::after{content:'✓';position:absolute;top:7px;right:8px;font-size:9px;color:var(--green);}
+.dec-card.hawk-rec{border-color:rgba(232,74,26,.35);}
+.dec-card.tech-rec{border-color:rgba(26,139,232,.35);}
+.dc-letter{font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.dc-name{font-family:var(--fp);font-size:12px;font-weight:700;line-height:1.3;margin-bottom:4px;}
+.dc-desc{font-size:9px;color:var(--text2);line-height:1.5;}
+.dc-tag{font-size:7px;padding:2px 6px;border:1px solid currentColor;letter-spacing:1px;text-transform:uppercase;margin-top:6px;display:inline-block;}
+.dc-tag.hawk{color:var(--hawk);}
+.dc-tag.tech{color:var(--tech);}
+.dc-tag.blood{color:var(--red);animation:tbpulse .8s infinite;}
+.dc-risk{margin-top:6px;display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text3);}
+.risk-track{flex:1;height:2px;background:var(--border);}
+.risk-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--amber),var(--red));}
+
+/* SUGGESTION */
+.sug-box{margin:0 16px 12px;padding:10px 13px;background:rgba(139,92,246,.04);border:1px solid rgba(139,92,246,.15);}
+.sug-text{font-size:10px;color:var(--text2);line-height:1.6;}
+
+/* REASONING */
+.reasoning-wrap{padding:0 16px 12px;}
+.reasoning-ta{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);font-family:var(--fn);font-size:10px;padding:10px;resize:none;height:52px;outline:none;line-height:1.5;transition:border-color .15s;}
+.reasoning-ta:focus{border-color:var(--blue);}
+.reasoning-ta::placeholder{color:var(--text3);}
+
+.submit-row{padding:0 16px 16px;display:flex;justify-content:flex-end;gap:8px;}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab-btn{flex:1;padding:9px 4px;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);background:none;border:none;cursor:pointer;transition:all .15s;border-bottom:2px solid transparent;}
+.tab-btn:hover{color:var(--text2);}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--amber);}
+.tab-pane{display:none;flex-direction:column;}
+.tab-pane.active{display:flex;}
+
+/* NATIONS LB */
+.nlb-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.nlb-item:hover{background:var(--surface);}
+.nlb-item.mine{background:rgba(24,232,128,.02);border-left:2px solid var(--green);}
+.nlb-rank{font-family:var(--fd);font-size:15px;color:var(--text3);min-width:18px;}
+.nlb-rank.g{color:var(--amber);}
+.nlb-flag{font-size:16px;}
+.nlb-info{flex:1;min-width:0;}
+.nlb-name{font-size:11px;font-weight:700;}
+.nlb-lean{font-size:7px;letter-spacing:1px;text-transform:uppercase;}
+.nlb-lean.hawk{color:var(--hawk);}
+.nlb-lean.tech{color:var(--tech);}
+.nlb-score{font-family:var(--fn);font-size:12px;font-weight:700;color:var(--green);}
+.nlb-nuclear{font-size:9px;color:var(--nuclear);}
+
+/* ACTIVITY */
+.act-item{display:flex;gap:7px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:9px;animation:act-in .3s ease;}
+@keyframes act-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.act-icon{flex-shrink:0;}
+.act-text{color:var(--text2);line-height:1.4;}
+.act-text strong{color:var(--text);}
+.act-rnd{font-size:8px;color:var(--text3);margin-left:auto;flex-shrink:0;}
+
+/* INTEL */
+.intel-item{padding:10px 12px;border-bottom:1px solid var(--border);}
+.intel-badge{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:4px;}
+.intel-text{font-size:9px;color:var(--text2);line-height:1.6;}
+
+/* ═══════════════ WAR BLITZ UI ═══════════════ */
+#gameScreen.war-mode{background:#08010100;}
+#gameScreen.war-mode .topbar{background:rgba(30,0,0,.95);border-bottom-color:var(--red);}
+#gameScreen.war-mode .game-grid{background:rgba(8,1,1,.9);}
+.war-overlay{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(200,0,0,.04) 2px,rgba(200,0,0,.04) 3px);pointer-events:none;z-index:8;}
+.attrition-bar{margin:10px 12px;padding:12px;background:rgba(139,0,0,.12);border:1px solid rgba(232,50,26,.3);}
+.atr-label{font-size:8px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.atr-track{height:8px;background:var(--border);}
+.atr-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--amber));transition:width .6s;}
+.blood-price{font-size:8px;color:var(--red);margin-top:5px;letter-spacing:1px;}
+
+/* GLITCH EFFECT */
+@keyframes glitch1{0%,100%{transform:translate(0)}10%{transform:translate(-2px,1px)}20%{transform:translate(2px,-1px)}30%{transform:translate(0)}}
+@keyframes glitch2{0%,100%{opacity:1}50%{opacity:.6}75%{opacity:.8}}
+.glitch{animation:glitch1 .4s steps(1) infinite,glitch2 .8s infinite;}
+.flicker{animation:glitch2 1.5s infinite;}
+
+/* INFO HIDDEN (Level 8B fog of war) */
+.info-hidden{filter:blur(4px);pointer-events:none;user-select:none;transition:filter .5s;}
+.info-hidden::after{content:'[INTEL BLACKOUT]';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--red);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;pointer-events:none;}
+
+/* ═══════════════ CHARTER / LoN ═══════════════ */
+#charterScreen{background:rgba(4,5,10,.96);z-index:200;}
+.charter-scroll{background:var(--parchment);color:#1a1008;max-width:680px;width:90%;max-height:88vh;overflow-y:auto;padding:48px 44px;box-shadow:0 0 80px rgba(232,160,26,.25),0 0 200px rgba(0,0,0,.8);position:relative;}
+.charter-scroll::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent,transparent 28px,rgba(139,92,0,.06) 28px,rgba(139,92,0,.06) 29px);pointer-events:none;}
+.charter-title{font-family:var(--fp);font-size:28px;font-weight:900;text-align:center;margin-bottom:4px;color:#1a0800;}
+.charter-subtitle{font-family:var(--fp);font-size:13px;font-style:italic;text-align:center;color:#5a4020;margin-bottom:24px;}
+.charter-preamble{font-size:11px;color:#3a2810;line-height:1.9;margin-bottom:24px;font-style:italic;border-bottom:1px solid rgba(139,92,0,.3);padding-bottom:20px;}
+.charter-clause{background:rgba(255,250,240,.6);border:1px solid rgba(139,92,0,.2);padding:16px;margin-bottom:14px;position:relative;}
+.cc-title{font-family:var(--fp);font-size:14px;font-weight:700;color:#1a0800;margin-bottom:6px;}
+.cc-body{font-size:10px;color:#3a2810;line-height:1.7;margin-bottom:10px;}
+.cc-pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.cc-pro{font-size:9px;color:#1a5a20;line-height:1.5;}
+.cc-con{font-size:9px;color:#8b2010;line-height:1.5;}
+.cc-vote{display:flex;gap:8px;justify-content:flex-end;}
+.vote-aye{background:rgba(24,232,128,.15);border:1px solid #18a860;color:#1a6030;font-family:var(--fn);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:all .15s;}
+.vote-aye:hover,.vote-aye.voted{background:#18a860;color:white;}
+.vote-nay{background:rgba(232,50,26,.1);border:1px solid #c03020;color:#8b2010;font-family:var(--fn);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:all .15s;}
+.vote-nay:hover,.vote-nay.voted{background:#c03020;color:white;}
+.cc-oracle-note{background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);padding:8px 10px;margin-bottom:8px;font-size:9px;color:#4a2880;font-style:italic;line-height:1.5;}
+.perm-member-badge{background:#e8a01a;color:#1a0800;font-family:var(--fn);font-size:8px;letter-spacing:1.5px;padding:3px 10px;text-transform:uppercase;display:inline-block;margin-bottom:8px;}
+.charter-sign-btn{width:100%;padding:16px;background:#1a0800;color:var(--parchment);font-family:var(--fn);font-size:11px;letter-spacing:3px;text-transform:uppercase;border:2px solid #5a3010;cursor:pointer;margin-top:16px;transition:all .2s;}
+.charter-sign-btn:hover{background:#3a1800;border-color:#8b5a20;}
+
+/* ═══════════════ OUTCOME ═══════════════ */
+#outcomeScreen{background:rgba(4,5,10,.97);z-index:150;align-items:flex-start;}
+.outcome-wrap{max-width:820px;width:100%;padding:36px 20px;display:flex;flex-direction:column;gap:20px;}
+.forensic-header{border-bottom:2px solid var(--border2);padding-bottom:16px;}
+.forensic-stamp{font-size:8px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;}
+.forensic-headline{font-family:var(--fp);font-size:clamp(18px,3vw,32px);font-weight:900;line-height:1.1;margin-bottom:4px;}
+.forensic-sub{font-size:10px;color:var(--text2);letter-spacing:1px;}
+.forensic-indicators{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.fi-tile{background:var(--surface);border:1px solid var(--border);padding:12px;text-align:center;}
+.fi-lbl{font-size:7px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;}
+.fi-val{font-family:var(--fd);font-size:24px;line-height:1;}
+.fi-delta{font-size:9px;margin-top:3px;}
+.fi-delta.up{color:var(--red);}
+.fi-delta.dn{color:var(--green);}
+.news-section{display:flex;flex-direction:column;gap:8px;}
+.news-item{background:var(--surface);border:1px solid var(--border);padding:13px;display:flex;gap:10px;animation:news-in .35s ease both;}
+@keyframes news-in{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+.news-src{font-size:7px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:3px;}
+.news-hl{font-family:var(--fp);font-size:13px;font-weight:700;line-height:1.3;margin-bottom:4px;}
+.news-body{font-size:9px;color:var(--text2);line-height:1.6;}
+.news-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+.news-tag{font-size:7px;padding:2px 7px;border:1px solid currentColor;letter-spacing:1px;text-transform:uppercase;}
+.news-tag.pos{color:var(--green);}
+.news-tag.neg{color:var(--red);}
+.causality-map{background:var(--surface);border:1px solid var(--border);padding:16px;}
+.cm-title{font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.cm-chain{display:flex;flex-direction:column;gap:0;}
+.cm-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.cm-item:last-child{border:none;}
+.cm-dot{width:9px;height:9px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:3px;}
+.cm-dot.cause{background:var(--amber);border-color:var(--amber);}
+.cm-dot.effect{background:var(--red);border-color:var(--red);}
+.cm-dot.ok{background:var(--green);border-color:var(--green);}
+.cm-text{font-size:10px;color:var(--text2);line-height:1.5;}
+.cm-text strong{color:var(--text);}
+
+/* ═══════════════ RECKONING ═══════════════ */
+#reckoningScreen{background:rgba(4,5,10,.98);z-index:300;}
+.reck-wrap{max-width:560px;width:100%;padding:40px 20px;display:flex;flex-direction:column;gap:20px;align-items:center;}
+.reck-title{font-family:var(--fd);font-size:44px;letter-spacing:5px;text-align:center;}
+.reck-sub{font-size:10px;color:var(--text2);text-align:center;line-height:1.7;letter-spacing:.5px;}
+.reck-status{background:var(--surface);border:1px solid var(--border);padding:16px;width:100%;}
+.reck-row{display:flex;justify-content:space-between;font-size:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.reck-row:last-child{border:none;}
+.reck-lbl{color:var(--text2);}
+.reck-val.ok{color:var(--green);}
+.reck-val.warn{color:var(--amber);}
+.reck-val.fail{color:var(--red);}
+
+/* ═══════════════ FINAL ═══════════════ */
+#finalScreen{background:var(--bg);flex-direction:column;overflow:hidden;}
+.final-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;max-width:600px;padding:40px 20px;}
+.final-result{font-family:var(--fd);font-size:clamp(40px,7vw,88px);letter-spacing:6px;line-height:1;}
+.final-result.win{color:var(--green);text-shadow:0 0 40px rgba(24,232,128,.25);}
+.final-result.lose{color:var(--red);text-shadow:0 0 40px rgba(232,50,26,.25);}
+.final-path{font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;}
+.final-path.hegemon{color:var(--amber);}
+.final-path.debtor{color:var(--red);}
+.final-path.rogue{color:var(--purple);}
+.final-sub{font-size:11px;color:var(--text2);line-height:1.8;max-width:460px;}
+.final-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;}
+.fs-tile{background:var(--surface);border:1px solid var(--border);padding:14px;}
+.fs-val{font-family:var(--fd);font-size:28px;color:var(--green);}
+.fs-lbl{font-size:7px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+.legacy-chain{max-width:560px;width:100%;background:var(--surface);border:1px solid var(--border);padding:14px;}
+.lc-title{font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.lc-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:9px;}
+.lc-rnd{color:var(--text3);min-width:50px;letter-spacing:1px;}
+.lc-text{color:var(--text2);line-height:1.4;}
+
+/* ═══════════════ HEGEMONY PATHS ═══════════════ */
+#hegemonyScreen{background:var(--bg);align-items:flex-start;}
+.heg-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;max-width:860px;width:100%;}
+.heg-card{background:var(--surface);border:2px solid var(--border);padding:22px;cursor:pointer;transition:all .15s;}
+.heg-card:hover{transform:translateY(-2px);}
+.heg-card.locked{opacity:.35;cursor:not-allowed;}
+.heg-card.locked:hover{transform:none;}
+.heg-icon{font-size:36px;margin-bottom:12px;}
+.heg-name{font-family:var(--fd);font-size:22px;letter-spacing:2px;margin-bottom:6px;}
+.heg-desc{font-size:9px;color:var(--text2);line-height:1.7;}
+.heg-reqs{margin-top:10px;font-size:8px;color:var(--text3);letter-spacing:1px;border-top:1px solid var(--border);padding-top:8px;}
+
+/* ═══════════════ NOTIF ═══════════════ */
+#notif{position:fixed;bottom:18px;right:18px;background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--green);padding:11px 15px;max-width:270px;z-index:9900;transform:translateX(120%);transition:transform .3s cubic-bezier(.4,2,.6,1);font-size:10px;}
+#notif.show{transform:translateX(0);}
+#notif-title{font-weight:700;margin-bottom:2px;font-size:11px;}
+#notif-body{color:var(--text2);}
+
+/* OVERLAY */
+#transOverlay{position:fixed;inset:0;background:var(--red);z-index:1000;opacity:0;pointer-events:none;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:44px;letter-spacing:8px;color:white;}
+#transOverlay.flash{animation:fl .7s ease forwards;}
+@keyframes fl{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+
+#tippingAlert{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--red);color:white;padding:9px 22px;font-family:var(--fd);font-size:16px;letter-spacing:3px;z-index:500;transition:transform .4s cubic-bezier(.4,2,.6,1);}
+#tippingAlert.show{transform:translateX(-50%) translateY(0);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);}
+
+/* WAR ATTRITION FULL MODE */
+.war-section{padding:14px;}
+.war-resource-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.wr-tile{background:var(--surface);border:1px solid rgba(232,50,26,.25);padding:11px;text-align:center;}
+.wr-label{font-size:7px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.wr-val{font-family:var(--fd);font-size:22px;color:var(--red);}
+.wr-subtext{font-size:8px;color:var(--text2);margin-top:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOBBY ═══ -->
+<div class="screen" id="lobbyScreen">
+  <div class="lobby-bg"></div>
+  <div style="position:relative;z-index:2;text-align:center;margin-bottom:36px;">
+    <div class="lobby-title">TIPPING<em>.</em><br>POINT</div>
+    <div class="lobby-sub">Global Crisis Simulation · 11 Rounds · League of Nations · Nuclear Threshold</div>
+  </div>
+  <div class="war-room" id="warRoom"></div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div id="lobbyPrompt" style="font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;">Select your operative</div>
+    <button class="btn btn-red" id="lobbyBtn" onclick="proceedFromLobby()" disabled>Enter the War Room →</button>
+  </div>
+</div>
+
+<!-- ═══ IDEOLOGY ═══ -->
+<div class="screen hidden" id="ideologyScreen">
+  <div class="ideo-split">
+    <div class="ideo-side hawk" id="hawkSide" onclick="pickIdeology('hawk')">
+      <div class="ideo-icon">⚔</div>
+      <div class="ideo-name">The Hawks</div>
+      <div class="ideo-tag">Peace through strength</div>
+      <div class="ideo-desc">Power is zero-sum. Seize leverage before rivals do. Security cannot be negotiated — only enforced.</div>
+      <div class="ideo-traits">
+        <div class="ideo-trait"><div class="ideo-dot"></div>Structural dominance priority</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Rapid decisive action over process</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Willing to burn capital for control</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Unlocks: Vanguard Coalition (Lv.5)</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Real-world anchor: Political Realism</div>
+      </div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="ideo-side tech" id="techSide" onclick="pickIdeology('tech')">
+      <div class="ideo-icon">⬡</div>
+      <div class="ideo-name">Technocrats</div>
+      <div class="ideo-tag">Progress through logic</div>
+      <div class="ideo-desc">Optimize, stabilize, compound. Data beats instinct. Positive-sum systems outlast zero-sum empires.</div>
+      <div class="ideo-traits">
+        <div class="ideo-trait"><div class="ideo-dot"></div>Long-term macroeconomic stability</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Multilateral cooperation first</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Data-driven over instinct-driven</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Unlocks: Synthetica Alliance (Lv.5)</div>
+        <div class="ideo-trait"><div class="ideo-dot"></div>Real-world anchor: Liberal Institutionalism</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:28px;z-index:10;display:flex;gap:10px;">
+    <button class="btn" onclick="showScreen('lobbyScreen')">← Back</button>
+    <button class="btn btn-red" id="ideoBtn" onclick="proceedFromIdeology()" disabled>Commit →</button>
+  </div>
+</div>
+
+<!-- ═══ NATION ═══ -->
+<div class="screen scrollable hidden" id="nationScreen">
+  <div class="page-wrap">
+    <div><div class="page-eyebrow">Step 3 of 4</div><div class="page-title">Choose Your Nation</div><div class="page-sub">Your geology is your destiny. Resources, borders, and history constrain what's possible — regardless of ideology.</div></div>
+    <div class="nation-grid" id="nationGrid"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn" onclick="showScreen('ideologyScreen')">← Back</button>
+      <button class="btn btn-red" id="nationBtn" onclick="proceedFromNation()" disabled>Claim Nation →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GOAL ═══ -->
+<div class="screen hidden" id="goalScreen">
+  <div class="goal-wrap">
+    <div style="text-align:center;">
+      <div class="page-eyebrow" id="goalEyebrow">Step 4 of 4 · Rounds 1–3 Mandate</div>
+      <div class="page-title" id="goalTitle" style="font-size:36px;letter-spacing:4px;">Define Your Mandate</div>
+      <div class="page-sub" id="goalSub" style="text-align:center;margin-top:8px;">Choose your primary objective. The simulation judges you by this at Round 6.</div>
+    </div>
+    <div class="goal-grid" id="goalGrid"></div>
+    <div style="font-size:8px;color:var(--text3);letter-spacing:1px;">Select one. You will be held to this.</div>
+    <button class="btn btn-red" id="goalBtn" onclick="proceedFromGoal()" disabled>Lock Mandate →</button>
+  </div>
+</div>
+
+<!-- ═══ MAIN GAME ═══ -->
+<div class="screen hidden" id="gameScreen">
+  <div class="topbar">
+    <div class="tb-logo"><div class="tb-pulse"></div>TIPPING POINT</div>
+    <div class="tb-mid">
+      <div>
+        <div class="tb-phase" id="phaseLabel">GLOBAL CRISIS PHASE</div>
+        <div class="round-pips" id="roundPips"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="font-size:8px;color:var(--text3);letter-spacing:2px;">TIME</div>
+        <div class="tb-timer" id="timerVal">3:00</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="player-chip">
+        <span id="chipIcon"></span>
+        <div><div style="font-size:10px;" id="chipName"></div><div style="font-size:8px;color:var(--text3);" id="chipRole"></div></div>
+      </div>
+      <div class="ideo-badge" id="ideoBadge"></div>
+      <div style="font-size:8px;color:var(--text2);letter-spacing:1px;" id="nationChip"></div>
+    </div>
+  </div>
+  <div class="ticker-bar"><div class="ticker-inner" id="tickerInner"></div></div>
+  <div class="game-grid">
+    <!-- LEFT -->
+    <div class="panel panel-l">
+      <div class="p-hdr">Stability <span id="gsiTopVal" style="color:var(--amber)">72</span></div>
+      <div class="stab-wrap" id="stabMeters"></div>
+      <div id="stressBox"></div>
+      <div id="tippingWarning" style="display:none;"></div>
+      <div id="nuclearMeter" style="display:none;"></div>
+      <div id="attritionBar" style="display:none;"></div>
+      <div class="mandate-box">
+        <div class="p-hdr" style="position:relative;padding:0 0 8px;">Mandate</div>
+        <div id="mandateBox"></div>
+      </div>
+    </div>
+    <!-- CENTER -->
+    <div class="panel panel-c" id="panelCenter"></div>
+    <!-- RIGHT -->
+    <div class="panel panel-r">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('nations')">Nations</button>
+        <button class="tab-btn" onclick="switchTab('feed')">Feed</button>
+        <button class="tab-btn" onclick="switchTab('intel')">Intel</button>
+      </div>
+      <div class="tab-pane active" id="tab-nations">
+        <div class="gsi-box">
+          <div class="gsi-lbl">Global Stability Index</div>
+          <div class="gsi-num" id="gsiDisplay">72.0</div>
+          <div style="font-size:9px;margin-top:3px;" id="gsiDelta">▼ -0.0 this round</div>
+        </div>
+        <div id="nationsLb"></div>
+      </div>
+      <div class="tab-pane" id="tab-feed">
+        <div id="actFeed"></div>
+      </div>
+      <div class="tab-pane" id="tab-intel">
+        <div id="intelFeed" style="padding:12px;display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CHARTER (LoN) ═══ -->
+<div class="screen hidden" id="charterScreen">
+  <div class="charter-scroll" id="charterContent"></div>
+</div>
+
+<!-- ═══ OUTCOME ═══ -->
+<div class="screen scrollable hidden" id="outcomeScreen">
+  <div class="outcome-wrap" id="outcomeContent"></div>
+</div>
+
+<!-- ═══ RECKONING ═══ -->
+<div class="screen hidden" id="reckoningScreen">
+  <div class="reck-wrap">
+    <div class="reck-title">THE RECKONING</div>
+    <div class="reck-sub">Three rounds complete. The world has changed. Assess your mandate — or revise it for the storm ahead.</div>
+    <div class="reck-status" id="reckoningStatus"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <div style="font-size:10px;color:var(--text2);text-align:center;">Revise your mandate for Rounds 4–6?</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" onclick="keepMandate()">Hold Mandate</button>
+        <button class="btn btn-red" onclick="reviseMandate()">Revise →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HEGEMONY PATHS ═══ -->
+<div class="screen scrollable hidden" id="hegemonyScreen">
+  <div class="page-wrap">
+    <div>
+      <div class="page-eyebrow" id="hegEyebrow">Round 11+ · Post-Hegemony Era</div>
+      <div class="page-title" id="hegTitle">Choose Your Path</div>
+      <div class="page-sub" id="hegSub">Your performance through the war determines which doors are open.</div>
+    </div>
+    <div class="heg-grid" id="hegGrid"></div>
+    <div style="display:flex;justify-content:flex-end;"><button class="btn btn-amber" id="hegContinueBtn" onclick="proceedHegemony()" disabled>Enter Post-War Era →</button></div>
+  </div>
+</div>
+
+<!-- ═══ FINAL ═══ -->
+<div class="screen hidden" id="finalScreen">
+  <div class="final-wrap" id="finalContent"></div>
+</div>
+
+<!-- NOTIF -->
+<div id="notif"><div id="notif-title"></div><div id="notif-body"></div></div>
+<div id="transOverlay"></div>
+<div id="tippingAlert">⚠ TIPPING POINT REACHED</div>
+<div class="war-overlay" id="warOverlay" style="display:none;"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA LAYER
+// ════════════════════════════════════════════════
+
+const ROLES = [
+  { id:'anchor', name:'THE ANCHOR', persona:'Dr. Marcus Reyes', title:'Chief Financial Strategist', obj:'Keep inflation low / Protect reserves', trait:'Risk-averse, data-driven, never commits without models', lean:'tech', color:'#1a7de8', icon:'⚓', desc:'You guard the vault. Every decision is a spreadsheet first.' },
+  { id:'envoy',  name:'THE ENVOY',  persona:'Amb. Lena Voss',   title:'Head of International Relations', obj:'Maintain alliances / Forge coalitions', trait:'Charismatic, prone to compromise, reads the room', lean:'tech', color:'#0eb8a8', icon:'🕊', desc:'You build bridges. Your handshake is worth a thousand tanks.' },
+  { id:'shield', name:'THE SHIELD', persona:'Cmdr. Zara Okonjo', title:'Director of Ops & Security', obj:'Direct resource deployment / Maintain order', trait:'Urgent, tactical, now over later', lean:'hawk', color:'#e84a1a', icon:'🛡', desc:'You keep things from falling apart — by any means necessary.' },
+  { id:'oracle', name:'THE ORACLE', persona:'Dr. Siva Krishnan', title:'Head of Strategic Intelligence', obj:'Predict Black Swans / Provide hidden data', trait:'Skeptical, sees patterns, rarely wrong', lean:'tech', color:'#8b5cf6', icon:'👁', desc:'You see it coming before it does. The curse is no one listens.' },
+];
+
+const NATIONS = [
+  { id:'glasnost', name:'Glasnost', flag:'🔷', region:'Northern Highlands', color:'#1a7de8', lean:'tech',
+    res:{oil:10,minerals:30,intel:90,capital:70}, passive:'+15 Intel/round. Diplomatic proposals cost -1 Stability.',
+    geo:'Landlocked. No resources. World\'s highest engineer density and dominant tech sector.',
+    traits:{'Intel Capital':90,'Starting Reserves':40,'Military':20,'Trade Volume':70},
+    hasQuantumFoundry: true, nuclearCap: false },
+  { id:'philistia', name:'Philistia', flag:'🔶', region:'Coastal Plains', color:'#e8a01a', lean:'hawk',
+    res:{oil:85,minerals:60,intel:30,capital:80}, passive:'+20 Resource leverage. Veto energy decisions.',
+    geo:'Sits atop region\'s largest lithium and oil. Coastline controls 3 major shipping lanes.',
+    traits:{'Intel Capital':30,'Starting Reserves':85,'Military':70,'Trade Volume':90},
+    hasLithiumVents: true, nuclearCap: false },
+  { id:'verdania', name:'Verdania', flag:'🟢', region:'Equatorial Forest', color:'#18e880', lean:'tech',
+    res:{oil:20,minerals:80,intel:60,capital:50}, passive:'Rare-earth veto on semiconductor decisions.',
+    geo:'Vast rare-earth deposits. Controls critical water tables. Deep jungle limits extraction.',
+    traits:{'Intel Capital':60,'Starting Reserves':50,'Military':40,'Trade Volume':55},
+    nuclearCap: false },
+  { id:'kestora', name:'Kestora', flag:'🔴', region:'Eastern Steppe', color:'#e8321a', lean:'hawk',
+    res:{oil:50,minerals:40,intel:50,capital:60}, passive:'Military decisions +10% effective. Neighbors pay 5 stability to bypass.',
+    geo:'Strategic crossroads. Military tradition. Controls overland trade routes.',
+    traits:{'Intel Capital':50,'Starting Reserves':60,'Military':90,'Trade Volume':60},
+    nuclearCap: false },
+  { id:'arkon', name:'Arkon', flag:'🟣', region:'Island Archipelago', color:'#8b5cf6', lean:'tech',
+    res:{oil:30,minerals:20,intel:80,capital:90}, passive:'Control global interest rates. +20 reserve interest/round.',
+    geo:'Global financial hub. No resources but world\'s most sophisticated banking system.',
+    traits:{'Intel Capital':80,'Starting Reserves':90,'Military':15,'Trade Volume':95},
+    nuclearCap: false },
+  { id:'morrath', name:'Morrath', flag:'⬛', region:'Contested Badlands', color:'#6e7b96', lean:'hawk',
+    res:{oil:60,minerals:70,intel:40,capital:40}, passive:'Start -10 stability, gain +25 if stabilized by Round 3.',
+    geo:'Disputed borders, underground oil. High internal tension — high risk, high reward.',
+    traits:{'Intel Capital':40,'Starting Reserves':40,'Military':75,'Trade Volume':45},
+    nuclearCap: false },
+];
+
+const GOALS = [
+  { id:'economic', icon:'📈', name:'Economic Supremacy', desc:'Achieve top-3 GSI position, maintain >80 reserve score by Round 6.' },
+  { id:'peace',    icon:'🕊', name:'Global Peace',        desc:'Keep all regional conflict scores <30. Broker 2+ diplomatic agreements.' },
+  { id:'security', icon:'🛡', name:'Absolute Security',   desc:'Prevent any domestic crisis from hitting critical. Military >70.' },
+  { id:'influence',icon:'🌐', name:'Soft Power Dominance',desc:'Build largest alliance network. Score highest Nations Index by Round 6.' },
+  { id:'survival', icon:'⚡', name:'Crisis Survival',     desc:'Simply don\'t collapse. Keep all stability meters above 20 through Round 6.' },
+  { id:'nuclear',  icon:'☢', name:'Nuclear Deterrence',  desc:'Develop nuclear capability by Round 10 without triggering total war.' },
+];
+
+// ═════ SCENARIO DATABASE (Rounds 1–11) ══════
+
+const SCENARIOS = {
+1:{ title:'The Energy Chokepoint', sev:'high', phase:'GLOBAL CRISIS — ROUND 1',
+  body:'A disputed maritime corridor has been quietly blockaded. Three major shipping routes are partially shut. Oil futures are spiking. Your allies are calling.',
+  oracle_context:'The Strait of Hormuz effect — 20% of global oil passes through 4 chokepoints. Historically, even partial blockades spike prices 15–35% within 72 hours. Philistia holds the leverage here: their coastline controls the northern lane.',
+  oracle_hawk:'Execute a show-of-force with naval escorts. Philistia understands power, not petitions.',
+  oracle_tech:'Release strategic reserves to calm markets while brokering an emergency summit. Buy time.',
+  dec:[
+    {id:'A',name:'Deploy Naval Escorts',desc:'Use naval assets to protect shipping lanes. Direct, fast, escalatory.',risk:55,hawk:true,tech:false,blood:false},
+    {id:'B',name:'Emergency Diplomatic Summit',desc:'Call emergency meeting of regional powers. Slow but avoids escalation.',risk:30,hawk:false,tech:true,blood:false},
+    {id:'C',name:'Strategic Reserve Release',desc:'Release reserves to calm markets while talks proceed.',risk:25,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Covert Pressure Campaign',desc:'Apply quiet backchannel threats to blockading party.',risk:65,hawk:true,tech:false,blood:false},
+  ],
+  impacts:{ A:{eco:-8,dip:-15,sec:+12,dom:0}, B:{eco:-4,dip:+18,sec:-5,dom:+3}, C:{eco:+5,dip:+6,sec:-3,dom:+2}, D:{eco:-6,dip:-20,sec:+8,dom:-4} },
+  headlines:{
+    A:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: NAVAL CLASH KILLS TRADE TRUCE', hawk_suc:'IRON FIST DOCTRINE SECURES CHOKEPOINT; GLOBAL OUTRAGE GROWS', tech_fail:'FLEET DEPLOYMENT BACKFIRES; SYNTHETICA PARTNERS DEMAND RECALL', tech_suc:'SHOW OF FORCE STABILIZES SHIPPING LANES — FRAGILE PEACE HOLDS' },
+    B:{ default:'SUMMIT BUYS TIME — BUT MARKETS ARE SKEPTICAL' },
+    C:{ tech_suc:'SYNTHETICA PROTOCOL STABILIZES REGIONAL OIL PRICES', default:'RESERVE RELEASE CALMS MARKETS — TEMPORARILY' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: PHILISTIA BORDER RETALIATION BEGINS', default:'COVERT CAMPAIGN LEAKS — DIPLOMATIC FALLOUT' },
+  },
+  news:{
+    A:['Naval vessels exchanged fire in disputed waters','Global oil surges to $130/bbl amid military tensions','Three allied nations demand explanation'],
+    B:['Emergency summit convenes; no deal yet','Shipping insurance costs triple as blockade continues','Diplomatic progress praised — analysts warn it\'s "too slow"'],
+    C:['Oil prices fall 8% after reserve announcement','Strategic reserves at 65-day coverage','Analysts: a delay, not a solution'],
+    D:['Classified pressure campaign exposed by foreign press','Three neutral nations condemn backchannel intimidation','Blockading party doubles down'],
+  }
+},
+2:{ title:'The Debt Cascade', sev:'critical', phase:'GLOBAL CRISIS — ROUND 2',
+  body:'Two emerging economies defaulted overnight. The IMF is overwhelmed. Your currency is under attack. If one more domino falls, contagion hits your reserves directly.',
+  oracle_context:'Sovereign debt contagion mirrors the 1998 Russian default — which wiped 30% from EM bond values in 3 weeks. The Glasnost Quantum Foundry is now being used as collateral by foreign creditors. Speed matters more than perfection.',
+  oracle_hawk:'Protect your position first. Currency defense now, let weaker states restructure or collapse.',
+  oracle_tech:'Contagion is the real threat. Spend on stabilization now or pay triple later. The IMF package is the multiplier play.',
+  dec:[
+    {id:'A',name:'Emergency Bilateral Bailout',desc:'Wire emergency funds directly to collapsing economy. Fast, expensive.',risk:45,hawk:false,tech:true,blood:false},
+    {id:'B',name:'IMF Coordinated Package',desc:'Push for multilateral rescue. Slower but shared cost.',risk:35,hawk:false,tech:true,blood:false},
+    {id:'C',name:'Currency Defense Operation',desc:'Defend your own currency first. Let contagion burn out.',risk:60,hawk:true,tech:false,blood:false},
+    {id:'D',name:'Debt Restructuring Ultimatum',desc:'Force debtor nations into restructuring with harsh conditionality.',risk:70,hawk:true,tech:false,blood:false},
+  ],
+  impacts:{ A:{eco:-12,dip:+20,sec:+3,dom:+2}, B:{eco:+4,dip:+12,sec:0,dom:+3}, C:{eco:+8,dip:-12,sec:-5,dom:-3}, D:{eco:-3,dip:-22,sec:-8,dom:-8} },
+  headlines:{
+    A:{ default:'BAILOUT STABILIZES REGION — AT COST TO RESERVES' },
+    B:{ tech_suc:'SYNTHETICA PROTOCOL STABILIZES REGIONAL CURRENCY EXCHANGE', default:'IMF PACKAGE AGREED — MARKETS TENTATIVELY RECOVER' },
+    C:{ hawk_suc:'IRON FIST DOCTRINE SECURES CURRENCY; CONTAGION SPREADS ELSEWHERE', hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: CURRENCY DEFENSE BREACHED AT 3AM', default:'CURRENCY DEFENSE HOLDS — BUT CONTAGION SPREADS' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: DEBTOR GOVERNMENTS TOPPLED, NEW HARDLINERS RISE', default:'RESTRUCTURING ULTIMATUM TRIGGERS POLITICAL CRISIS' },
+  },
+  news:{
+    A:['Emergency transfer prevents third default','Your reserves fall 18% but markets stabilize','Foreign press: "Act of financial solidarity"'],
+    B:['$80B multilateral package approved','Contagion contained — for now','Two more nations requesting IMF review'],
+    C:['Your currency defended successfully','Four neighboring economies now in distress','Global stability drops 8 points on contagion fears'],
+    D:['Governments toppled in three debtor nations','Anti-austerity protests turn violent','Creditor coalition fractures over conditionality terms'],
+  }
+},
+3:{ title:'The Internal Fracture', sev:'critical', phase:'GLOBAL CRISIS — ROUND 3',
+  body:'Domestic unrest is building. Supply chain failures have hit food prices hard. Citizens are in the streets. A general strike is 48 hours away. Your legitimacy is on the line.',
+  oracle_context:'Domestic stability is the foundation everything rests on. Internal polling shows approval correlates 0.9r with food prices — economic relief is the cheapest security you can buy. A government that loses the streets loses everything.',
+  oracle_hawk:'Streets are a power vacuum — fill it or someone else will. Crackdowns create short-term order.',
+  oracle_tech:'Crackdowns create martyrs. Subsidies and dialogue buy legitimacy you can\'t purchase back.',
+  dec:[
+    {id:'A',name:'Emergency Food & Fuel Relief',desc:'Direct subsidies to keep basics affordable. Costly but defuses tension.',risk:30,hawk:false,tech:true,blood:false},
+    {id:'B',name:'Security Crackdown',desc:'Enforce order. Declare emergency measures. Fast, creates resentment.',risk:65,hawk:true,tech:false,blood:false},
+    {id:'C',name:'National Dialogue Commission',desc:'Create formal channel for grievances. Slow but builds legitimacy.',risk:25,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Blame External Actors',desc:'Point to foreign interference. Rally nationalism. High risk, high unity.',risk:75,hawk:true,tech:false,blood:false},
+  ],
+  impacts:{ A:{eco:-10,dip:+5,sec:+8,dom:+15}, B:{eco:+3,dip:-18,sec:+15,dom:-5}, C:{eco:-3,dip:+15,sec:+5,dom:+10}, D:{eco:-5,dip:-25,sec:+10,dom:-10} },
+  headlines:{
+    A:{ default:'RELIEF PACKAGE CALMS STREETS — FISCAL COST LOOMS' },
+    B:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: CRACKDOWN TRIGGERS GENERAL STRIKE', hawk_suc:'IRON FIST DOCTRINE RESTORES ORDER; INTERNATIONAL CONDEMNATION BEGINS' },
+    C:{ tech_suc:'SYNTHETICA PROTOCOL: DIALOGUE COMMISSION PREVENTS CONSTITUTIONAL CRISIS', default:'DIALOGUE COMMISSION LAUNCHED — STRIKE DELAYED' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: NATIONALIST GAMBIT BACKFIRES AS DATA EXPOSED', default:'NATIONALIST GAMBIT WORKS — THEN BACKFIRES' },
+  },
+  news:{
+    A:['Food prices stabilize after emergency measures','General strike called off — provisionally','IMF flags "unsustainable spending trajectory"'],
+    B:['Protests cleared from capital in 6 hours','International observers condemn use of force','14 nations issue diplomatic protests'],
+    C:['Commission includes opposition representatives','Strike delayed 30 days pending talks','Markets respond positively to stability signal'],
+    D:['Short-term rally around the flag','Foreign minister summoned to explain accusations','Protests resume with new, harder demands'],
+  }
+},
+4:{ title:'The Technology Arms Race', sev:'high', phase:'GLOBAL CRISIS — ROUND 4',
+  body:'A rival nation has deployed a new AI-powered surveillance and cyber-warfare suite. Your infrastructure is being probed. Three critical systems showed anomalies overnight. The Oracle\'s data feeds are flickering.',
+  oracle_context:'Cyber conflict is asymmetric — a $50M investment can damage a $50B economy. Glasnost\'s Quantum Foundry is the most valuable target in the region. The Oracle warns: attribution analysis shows 87% confidence on state-level actor.',
+  oracle_hawk:'You\'ve been attacked. A non-response is an invitation. Launch a counterstrike now.',
+  oracle_tech:'Offense is a trap. Defense, intelligence-sharing, and alliance-building create durable security.',
+  dec:[
+    {id:'A',name:'Cyber Counterstrike',desc:'Launch offensive cyber operations to demonstrate capability and deter probing.',risk:70,hawk:true,tech:false,blood:false},
+    {id:'B',name:'Global Cyber Norms Treaty',desc:'Propose international rules of cyber engagement. Long game.',risk:25,hawk:false,tech:true,blood:false},
+    {id:'C',name:'Emergency Infrastructure Hardening',desc:'Defensive fortress mode. Shore up all critical systems. Expensive.',risk:35,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Technology Transfer Alliance',desc:'Pool resources with allies for shared cyber defense network.',risk:40,hawk:false,tech:true,blood:false},
+  ],
+  impacts:{ A:{eco:-10,dip:-15,sec:+15,dom:-3}, B:{eco:+3,dip:+18,sec:-5,dom:+2}, C:{eco:-8,dip:+3,sec:+18,dom:+3}, D:{eco:-4,dip:+20,sec:+12,dom:+4} },
+  headlines:{
+    A:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: CYBER RETALIATION TRIGGERS GRID COLLAPSE', hawk_suc:'IRON FIST CYBER DOCTRINE DETERS RIVAL; COLD DIGITAL WAR BEGINS' },
+    B:{ tech_suc:'SYNTHETICA CYBER NORMS TREATY GAINS 12-NATION BACKING', default:'TREATY PROPOSAL RECEIVES MIXED RESPONSE' },
+    C:{ default:'INFRASTRUCTURE HARDENING COMPLETE — COSTLY BUT SECURE' },
+    D:{ tech_suc:'SYNTHETICA ALLIED CYBER PACT FORMS NEW POWER BLOC', default:'ALLIED CYBER PACT FORMED — NEW BLOC EMERGES' },
+  },
+  news:{
+    A:['Critical systems in rival nation disrupted','Rival retaliates — your banking grid offline 4 hours','Three nations call for emergency digital armistice'],
+    B:['7 nations endorse treaty framework','Probing attacks continue during negotiations','Analysts: "Bold but possibly naive"'],
+    C:['Critical infrastructure upgrades complete','No successful intrusions in 48 hours','Cost overruns strain quarterly budget'],
+    D:['6-nation cyber pact signed','Shared intelligence prevents 3 major attacks','Rival nation faces unprecedented unified response'],
+  }
+},
+5:{ title:'The Rare Earth Embargo — Kinetica', sev:'critical', phase:'TIPPING POINT — ROUND 5',
+  body:'Kinetica has halted all exports of superconductors to Hawk-aligned nations. Global supply chains have collapsed 40% in one round. Semiconductor prices have spiked 62%. Your Oracle warns this is coordinated with Glasnost\'s foundry leverage.',
+  oracle_context:'The Kinetica Embargo mirrors the 1973 OPEC shock but for the semiconductor age. Philistia\'s Lithium Vents are now the critical chokepoint. The Ideological Gap is approaching 60% — if it exceeds that threshold, Level 8 War Protocol activates automatically.',
+  oracle_hawk:'Seize the Lithium Vents now while Kinetica is distracted. Resource control is the only counter to a supply embargo.',
+  oracle_tech:'Negotiate a multilateral trade-swap to dilute the embargo impact. Verdania\'s rare earths can substitute within 3 rounds.',
+  dec:[
+    {id:'A',name:'Seize Geological Chokepoints',desc:'Military operation to secure critical resource nodes. Massive escalation risk.',risk:85,hawk:true,tech:false,blood:true},
+    {id:'B',name:'Verdania Resource Alliance',desc:'Emergency rare-earth swap deal with Verdania. Reduces embargo impact 60%.',risk:35,hawk:false,tech:true,blood:false},
+    {id:'C',name:'Counter-Embargo on Kinetica',desc:'Tit-for-tat blockade on their ports. Escalation ladder.',risk:65,hawk:true,tech:false,blood:false},
+    {id:'D',name:'Emergency WTO Filing',desc:'Formal dispute filing. Slow, builds legitimacy, buys 2 rounds.',risk:20,hawk:false,tech:true,blood:false},
+  ],
+  impacts:{ A:{eco:+5,dip:-30,sec:+20,dom:-10}, B:{eco:-5,dip:+15,sec:+3,dom:+5}, C:{eco:-10,dip:-20,sec:+8,dom:-8}, D:{eco:+3,dip:+10,sec:-5,dom:+3} },
+  headlines:{
+    A:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: RESOURCE SEIZURE TRIGGERS COALITION RESPONSE', hawk_suc:'IRON FIST SECURES LITHIUM VENTS; GLOBAL CONDEMNATION UNANIMOUS' },
+    B:{ tech_suc:'SYNTHETICA VERDANIA PACT NEUTRALIZES KINETICA EMBARGO', default:'VERDANIA ALLIANCE BLUNTS WORST OF EMBARGO' },
+    C:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: COUNTER-EMBARGO COLLAPSES TRADE NETWORK', default:'COUNTER-EMBARGO TRIGGERS MUTUAL ECONOMIC DAMAGE' },
+    D:{ tech_suc:'SYNTHETICA PROTOCOL STABILIZES REGIONAL LITHIUM PRICES', default:'WTO FILING ACCEPTED — RESOLUTION EXPECTED IN 18 MONTHS' },
+  },
+  news:{
+    A:['Military assets deployed to three resource zones','Emergency UN Security Council session called','Kinetica announces full supply chain severance'],
+    B:['Verdania rare-earth swap deal signed in 48 hours','Semiconductor prices stabilize at +32% (from +62%)','Kinetica embargo begins to fracture without full support'],
+    C:['Kinetica ports blockaded; humanitarian aid blocked','Six nations demand de-escalation','Semiconductor prices spike further to +78%'],
+    D:['WTO Dispute DS-2847 formally registered','Markets stabilize marginally on legal certainty','Kinetica continues embargo pending ruling'],
+  }
+},
+6:{ title:'The Climate Catastrophe — The Great Displacement', sev:'critical', phase:'TIPPING POINT — ROUND 6',
+  body:'A cascading climate event has displaced 4 million people in two neighboring nations. Refugee flows are destabilizing your border regions. The humanoid figures on your Stability board are shrinking. Global attention is on you.',
+  oracle_context:'Refugee crises amplify existing political fault lines. Every round of inaction multiplies displacement by 1.4×. The 4M figure is the floor, not the ceiling. The Oracle\'s models show that source-nation stabilization requires $140B — but prevents a 10-nation cascade.',
+  oracle_hawk:'Borders are sovereignty. Controlled intake with strict screening. The cost of open borders exceeds the cost of control.',
+  oracle_tech:'The source of the crisis is what needs solving — walls just delay the reckoning. Climate Marshall Plan is the only systemic answer.',
+  dec:[
+    {id:'A',name:'Open Humanitarian Corridors',desc:'Accept refugee flows, establish emergency camps. Costly, humanitarian.',risk:40,hawk:false,tech:true,blood:false},
+    {id:'B',name:'Border Security Operation',desc:'Seal the border. Contain the flow. Brutal but fast.',risk:60,hawk:true,tech:false,blood:true},
+    {id:'C',name:'Regional Climate Marshall Plan',desc:'Lead multinational emergency fund for source nations. $140B.',risk:45,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Attribute Crisis to Rival\'s Emissions',desc:'Weaponize climate data for diplomatic pressure. Buys time.',risk:55,hawk:true,tech:false,blood:false},
+  ],
+  impacts:{ A:{eco:-8,dip:+22,sec:-5,dom:-5}, B:{eco:+4,dip:-28,sec:+8,dom:-12}, C:{eco:-12,dip:+30,sec:+3,dom:+8}, D:{eco:-5,dip:-18,sec:-3,dom:-8} },
+  headlines:{
+    A:{ default:'HUMANITARIAN CORRIDORS OPEN — POLITICAL BACKLASH BUILDS' },
+    B:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: BORDER CLOSURE TRIGGERS INTERNATIONAL CRISIS', hawk_suc:'IRON FIST BORDER DOCTRINE HOLDS; IMAGES FROM THE WIRE SHOCK THE WORLD' },
+    C:{ tech_suc:'SYNTHETICA CLIMATE ACCORD: MARSHALL PLAN TRANSFORMS CRISIS INTO COOPERATION', default:'CLIMATE MARSHALL PLAN GAINS MOMENTUM' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: CLIMATE BLAME GAME EXPOSED BY RIVAL DATA', default:'CLIMATE BLAME GAME FAILS — RIVAL DATA CONTRADICTS CLAIM' },
+  },
+  news:{
+    A:['380,000 refugees processed through emergency camps','Domestic opposition parties surge in polls','UN Secretary-General praises leadership'],
+    B:['Humanitarian organizations condemn border policy','12 nations vote for emergency UN session','Images from the border dominate global media'],
+    C:['$140B pledged by regional coalition','Source nations begin stabilizing','Your nation named "moral leader" of climate response'],
+    D:['Rival nation releases counter-data discrediting claims','Your credibility damaged at UN Climate Summit','Refugee crisis continues unabated — now 5.6M displaced'],
+  }
+},
+7:{ title:'The Convergence — Last Stand', sev:'critical', phase:'TIPPING POINT — ROUND 7',
+  body:'Every thread has converged. The Ideological Gap is being measured. The Kinetica Embargo, the displaced millions, the cyber cold war — all reach their inflection point simultaneously. The Tipping Point is here.',
+  oracle_context:'FINAL STANDARD ROUND. The Ideological Gap between Hawk and Technocrat nations is being calculated now. If it exceeds 60%, Round 8 will NOT be a normal scenario. The War Protocol will activate. Your decisions here determine which world you inherit.',
+  oracle_hawk:'Consolidate your gains. Secure your chokepoints. The war is coming whether you want it or not.',
+  oracle_tech:'One final grand bargain may avert the blitz. But it will cost your reserve surplus. History will remember.',
+  dec:[
+    {id:'A',name:'Grand Bargain — Legacy Play',desc:'Sacrifice reserve surplus for comprehensive multilateral deal. Averts war.',risk:40,hawk:false,tech:true,blood:false},
+    {id:'B',name:'Strategic Consolidation',desc:'Secure your position. Pull back from commitments. Build from strength.',risk:30,hawk:true,tech:false,blood:false},
+    {id:'C',name:'Radical Intelligence Sharing',desc:'Release all Oracle data to allied nations. Unprecedented trust.',risk:55,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Full Power Projection',desc:'Deploy full strategic and military capacity. Demonstrate dominance.',risk:80,hawk:true,tech:false,blood:true},
+  ],
+  impacts:{ A:{eco:-8,dip:+30,sec:+5,dom:+5}, B:{eco:+15,dip:-15,sec:+18,dom:+3}, C:{eco:+3,dip:+25,sec:-8,dom:+4}, D:{eco:+8,dip:-20,sec:+20,dom:-5} },
+  headlines:{
+    A:{ tech_suc:'SYNTHETICA GRAND BARGAIN SECURES FRAGILE GLOBAL ORDER — WAR AVERTED', tech_fail:'SYNTHETICA PROTOCOL FAILS: GRAND BARGAIN REJECTED; WAR INEVITABLE', default:'GRAND BARGAIN STABILIZES SYSTEM — FOR NOW' },
+    B:{ hawk_suc:'IRON FIST CONSOLIDATION: NATION SECURED; WORLD FRACTURES', default:'STRATEGIC RETREAT SECURES NATION — WORLD FRACTURES' },
+    C:{ tech_suc:'ORACLE TRANSPARENCY BREAKS INFORMATION DEADLOCK; ALLIANCE SOLIDIFIES', default:'INTELLIGENCE SHARING BREAKS DEADLOCK' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: POWER PROJECTION TRIGGERS MULTI-NATION RESPONSE', hawk_suc:'IRON FIST PROJECTION RESHAPES WORLD; NATION AT TOP — ALONE' },
+  },
+  news:{
+    A:['Historic multilateral agreement signed','Your reserves depleted — system stabilized','Ideological Gap drops 20 points'],
+    B:['Your nation ends round in top GSI position','Three alliance partners feel abandoned','Global stability falls to new low'],
+    C:['Hidden data reveals true state of all crises','Allied response becomes coordinated for first time','The Oracle\'s intelligence advantage is spent — but world is better for it'],
+    D:['Military dominance asserted across three theaters','Economic sanctions from 6 nations begin','The world rebalances — with your nation at the top, alone'],
+  }
+},
+// ROUND 8A — WAR BLITZ
+'8A':{ title:'The Great Attrition — First Strike', sev:'critical', phase:'WAR BLITZ — ROUND 8A',
+  body:'THE IDEOLOGICAL GAP EXCEEDED 60%. THE WAR PROTOCOL IS ACTIVE.\n\nYour Geological Chokepoints are under threat. The Lithium Vents, the Quantum Foundry — enemies are moving to seize them. You have one round to decide the fate of your strategic assets. Every action has a Blood Price.',
+  oracle_context:'⚠ WAR PROTOCOL ACTIVE. Your National Resilience replaces all Stability meters. Attrition is the only currency. Do you sabotage your own resources to deny enemies — or defend them at 90% Blood Price?',
+  oracle_hawk:'Defend at all costs. Resources lost now cannot be reclaimed. The Blood Price is the cost of sovereignty.',
+  oracle_tech:'Sabotage your own chokepoints if necessary. Deny the enemy leverage. Your intellectual capital survives; physical assets are temporary.',
+  dec:[
+    {id:'A',name:'Defend Chokepoints at All Costs',desc:'Full military defense of all geological assets. Blood Price: -35 Resilience.',risk:90,hawk:true,tech:false,blood:true},
+    {id:'B',name:'Strategic Sabotage',desc:'Destroy your own resources before enemy can seize them. Deny leverage.',risk:60,hawk:false,tech:true,blood:true},
+    {id:'C',name:'Fortified Retreat',desc:'Abandon peripheral assets. Protect core infrastructure and reserves.',risk:50,hawk:false,tech:true,blood:false},
+    {id:'D',name:'Emergency Alliance Call',desc:'Call in alliance pledges. Requires Collective Security clause (if signed).',risk:45,hawk:false,tech:true,blood:false},
+  ],
+  impacts:{ A:{eco:0,dip:-10,sec:+25,dom:0}, B:{eco:-15,dip:0,sec:-5,dom:0}, C:{eco:-8,dip:+5,sec:+8,dom:0}, D:{eco:-5,dip:+15,sec:+5,dom:0} },
+  headlines:{
+    A:{ hawk_suc:'IRON FIST HOLDS THE LINE: CHOKEPOINTS DEFENDED AT ENORMOUS COST', hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: DEFENSIVE LINES BROKEN; LITHIUM VENTS FALL' },
+    B:{ tech_suc:'SCORCHED EARTH: QUANTUM FOUNDRY SABOTAGED; ENEMY ADVANCE STALLED', default:'STRATEGIC SABOTAGE DENIES ENEMY KEY LEVERAGE' },
+    C:{ default:'FORTIFIED RETREAT: CORE INFRASTRUCTURE PROTECTED; OUTSKIRTS LOST' },
+    D:{ tech_suc:'SYNTHETICA ALLIANCE PACT ACTIVATES; ALLIED FORCES ARRIVE AT BORDER', hawk_fail:'ALLIANCE CALL REJECTED: VANGUARD COALITION SPLINTERS UNDER PRESSURE' },
+  },
+  news:{
+    A:['Major engagements reported across three geological zones','Casualty figures classified for national security','Resource infrastructure heavily damaged by both sides'],
+    B:['Quantum Foundry/Lithium Vents detonated — enemy advance halted','Economic cost: $800B in lost infrastructure','Strategic denial successful — but reconstruction will take 5 years'],
+    C:['Peripheral territories ceded under controlled withdrawal','Core capital and reserves intact','Enemy expansion stopped at second defensive line'],
+    D:['Allied forces deploy within 18 hours','Enemy offensive stalls against multi-nation resistance','Post-war reconstruction commitment secured from allies'],
+  }
+},
+// ROUND 8B — WAR BLITZ (INCOMPLETE DATA)
+'8B':{ title:'The Great Attrition — Total Mobilization', sev:'critical', phase:'WAR BLITZ — ROUND 8B',
+  body:'THE ORACLE WARNS: THE GLOBAL SATELLITE GRID IS FAILING.\n\n[INTEL BLACKOUT IN PROGRESS — 50% OF INFORMATION HIDDEN]\n\nYou are making decisions with incomplete data. This is the fog of war. Choose between Tactical Victory (high GSI cost) or Strategic Retreat (high National Pride cost).',
+  oracle_context:'⚠ INFORMATION BLACKOUT. The Oracle can only see 50% of current intelligence. What is known: National Resilience is the only metric that matters. Reaching 0% means unconditional surrender — you become a Mandate Territory.',
+  oracle_hawk:'Tactical Victory. Seize every advantage while the enemy is also blind. Decisiveness wins in fog of war.',
+  oracle_tech:'Strategic Retreat preserves national capital for post-war reconstruction. You can win the peace even if you lose the battle.',
+  dec:[
+    {id:'A',name:'Tactical Victory — All In',desc:'Full offensive while intelligence is down. Massive Blood Price but decisive.',risk:90,hawk:true,tech:false,blood:true},
+    {id:'B',name:'Strategic Retreat — Save the State',desc:'Controlled withdrawal. Sacrifice National Pride, save National Resilience.',risk:45,hawk:false,tech:true,blood:false},
+    {id:'C',name:'Asymmetric Resistance',desc:'Switch to guerrilla doctrine. Bleed the enemy\'s Attrition meter slowly.',risk:65,hawk:true,tech:false,blood:true},
+    {id:'D',name:'Negotiate Ceasefire Terms',desc:'Use remaining leverage to get best possible armistice. Ends the war.',risk:35,hawk:false,tech:true,blood:false},
+  ],
+  impacts:{ A:{eco:-20,dip:-20,sec:+30,dom:-15}, B:{eco:0,dip:+10,sec:-20,dom:-20}, C:{eco:-10,dip:-5,sec:+15,dom:-5}, D:{eco:-5,dip:+20,sec:-10,dom:+5} },
+  headlines:{
+    A:{ hawk_suc:'IRON FIST DOCTRINE SECURES TACTICAL VICTORY; WORLD HOLDS BREATH', hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: BLIND OFFENSIVE COLLAPSES INTO ROUT' },
+    B:{ tech_suc:'STRATEGIC RETREAT PRESERVES STATE; RECONSTRUCTION ALREADY PLANNED', default:'STRATEGIC RETREAT: NATIONAL PRIDE COST, NATIONAL SOUL SAVED' },
+    C:{ default:'ASYMMETRIC RESISTANCE BLEEDS ENEMY; STALEMATE EMERGES' },
+    D:{ tech_suc:'SYNTHETICA CEASEFIRE PROTOCOL ENDS WAR; CHARTER SUMMONED', default:'ARMISTICE SIGNED — THE WORLD EXHALES' },
+  },
+  news:{
+    A:['Major urban centers contested in blind offensive','Satellite infrastructure begins partial restoration','Both sides reporting catastrophic attrition losses'],
+    B:['Government in temporary exile; sovereign in tact','International recognition maintained through retreat','Post-war reconstruction fund activated from reserves'],
+    C:['Guerrilla networks disrupt enemy supply lines','Attrition war extends into third week','Oracle estimates enemy resilience at 25% and falling'],
+    D:['Armistice signed at [LOCATION REDACTED]','War tribunal to follow — nations with highest resilience get charter seats','LEAGUE OF NATIONS CHARTER SUMMIT ANNOUNCED'],
+  }
+},
+9:{ title:'The League of Nations — Reconstruction Phase', sev:'high', phase:'POST-WAR — ROUND 9',
+  body:'The war is over. Survivors enter the Reconstruction Phase. The League of Nations Charter is being built. This round tests whether your Alliance Manifesto can actually govern — or if it was just a war-time marriage of convenience.',
+  oracle_context:'The Nuclear Threshold meter is now visible. Nations with sufficient score may begin "enrichment." But the Oracle warns: enrichment will be leaked to all allies, triggering a trade embargo. The Veto power of the Permanent Member is the game\'s most dangerous tool.',
+  oracle_hawk:'Use the Veto. Protect your national interests from the Charter\'s constraints. The LoN should serve the strong.',
+  oracle_tech:'The Charter is only as strong as the weakest signatory. Resist the veto temptation — it raises the Ideological Gap 25%.',
+  dec:[
+    {id:'A',name:'Become Charter Architect',desc:'Lead the LoN formation. Sacrifice leverage for institutional legitimacy.',risk:35,hawk:false,tech:true,blood:false},
+    {id:'B',name:'Exercise the Permanent Veto',desc:'Strike out one Charter clause. Maximum protection — maximum GSI penalty.',risk:60,hawk:true,tech:false,blood:false},
+    {id:'C',name:'Begin Nuclear Enrichment',desc:'Start enrichment program. Boosts power to maximum — triggers embargo.',risk:80,hawk:true,tech:false,blood:false},
+    {id:'D',name:'Rebuild Through Alliance',desc:'Pool reconstruction resources with Synthetica or Vanguard allies.',risk:30,hawk:false,tech:true,blood:false},
+  ],
+  impacts:{ A:{eco:-5,dip:+25,sec:+5,dom:+10}, B:{eco:+8,dip:-20,sec:+12,dom:-8}, C:{eco:-15,dip:-25,sec:+25,dom:-5}, D:{eco:+5,dip:+15,sec:+8,dom:+8} },
+  headlines:{
+    A:{ tech_suc:'SYNTHETICA CHARTER ARCHITECT: ERA OF COOPERATION CODIFIED', default:'CHARTER ARCHITECT ROLE SHAPES NEW WORLD ORDER' },
+    B:{ hawk_suc:'IRON FIST VETO: NATIONAL INTERESTS PROTECTED; IDEOLOGICAL GAP WIDENS', hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: VETO TRIGGERS CHARTER WALKOUT' },
+    C:{ default:'THE BRINK: WORLD HOLDS BREATH AS ENRICHMENT CYCLE BEGINS' },
+    D:{ tech_suc:'SYNTHETICA RECONSTRUCTION ALLIANCE REBUILDS FASTER THAN ANY SINGLE NATION', default:'RECONSTRUCTION ALLIANCE ACCELERATES POST-WAR RECOVERY' },
+  },
+  news:{
+    A:['League of Nations Charter framework accepted','Your nation named founding architect of new order','Permanent Member candidates being evaluated'],
+    B:['Permanent Veto exercised — one clause struck from Charter','Ideological Gap rises 25 points','Three nations threaten to leave LoN over "rigged" charter'],
+    C:['First enrichment cycle announced; Oracle leaks to all allies','Six-nation trade embargo begins within 24 hours','Nuclear Threshold meter spikes — Level 10 Nuclear Dilemma incoming'],
+    D:['Reconstruction pact accelerates rebuilding by 40%','Your nation recovers reserves 2 rounds ahead of schedule','Alliance solidarity at highest recorded level'],
+  }
+},
+10:{ title:'The Hegemonic Reckoning', sev:'critical', phase:'HEGEMONIC ERA — ROUND 10',
+  body:'This is the final round of the core simulation. The game evaluates your complete Causality Map from Rounds 1–9 to determine your nation\'s Legacy.\n\nThe smaller nation of Orizon is collapsing. What you do now defines whether you are a Hegemon, a Debtor State, or a Rogue State.',
+  oracle_context:'The Oracle\'s final analysis: nations that collaborated outperformed isolationists by 2.3× on stability metrics across all recorded simulations. But the Hawk path compounds differently — control at the top is absolute. The choice is yours for the last time.',
+  oracle_hawk:'Annex Orizon. Restore order through incorporation. This is the Hegemon\'s prerogative.',
+  oracle_tech:'Massive bailout. Drain your reserves but cement your position as the moral superpower. History will vindicate this.',
+  dec:[
+    {id:'A',name:'Annex Orizon',desc:'Absorb the collapsing state into your economic sphere. Hawk endgame.',risk:45,hawk:true,tech:false,blood:false},
+    {id:'B',name:'Orizon Marshall Bailout',desc:'Drain reserves for comprehensive Orizon rescue. Technocrat endgame.',risk:40,hawk:false,tech:true,blood:false},
+    {id:'C',name:'IMF Mandate',desc:'Hand Orizon to the IMF. Neutral exit — costs you influence.',risk:25,hawk:false,tech:false,blood:false},
+    {id:'D',name:'Ignore Orizon',desc:'Let it collapse. Zero cost — maximum moral hazard.',risk:70,hawk:true,tech:false,blood:false},
+  ],
+  impacts:{ A:{eco:+15,dip:-15,sec:+20,dom:-5}, B:{eco:-20,dip:+30,sec:+5,dom:+15}, C:{eco:-5,dip:+8,sec:0,dom:+5}, D:{eco:+10,dip:-25,sec:-8,dom:-15} },
+  headlines:{
+    A:{ hawk_suc:'HEGEMON RISES: ORIZON ABSORBED; NEW WORLD ORDER CRYSTALLIZES', hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: ANNEXATION TRIGGERS LEAGUE EXPULSION' },
+    B:{ tech_suc:'SYNTHETICA SUPERPOWER: ORIZON BAILOUT CEMENTS MORAL HEGEMON STATUS', default:'ORIZON SAVED — AT ENORMOUS COST TO RESERVES' },
+    C:{ default:'ORIZON HANDED TO IMF; YOUR INFLUENCE RECEDES' },
+    D:{ hawk_fail:'GENERALISSIMO\'S GAMBIT FAILS: ORIZON COLLAPSE TRIGGERS REGIONAL CONTAGION', default:'ORIZON ABANDONED: REGIONAL CASCADE BEGINS' },
+  },
+  news:{
+    A:['Orizon formally integrated as economic territory','Your GSI vaults to regional maximum','League of Nations votes 8-4 to condemn — but cannot stop it'],
+    B:['Orizon reconstruction fully funded','Your reserves at 40% — but reputation at maximum','You are named "Architect of the Long Peace"'],
+    C:['IMF takes Orizon mandate','Your credibility intact; influence slightly reduced','Both Hawk and Technocrat blocs acknowledge your neutrality'],
+    D:['Orizon collapses — refugee wave reaches 8M','Regional stability index falls to historic low','Your nation isolated as the world scrambles'],
+  }
+},
+};
+
+// CHARTER CLAUSES
+const CHARTER_CLAUSES = [
+  { id:'open_skies', title:'I. The Open Skies Policy',
+    body:'All signatory nations agree to full intelligence transparency. The Oracle\'s data feeds become a global commons.',
+    pro:'+20 GSI. Oracle sees 100% of enemy data.',
+    con:'-15 National Sovereignty. You cannot hide Enrichment progress.',
+    oracle_note:'This clause contains a hidden benefit for Glasnost — their Quantum Foundry produces superior intelligence by default, meaning "equality" here is structurally asymmetric.',
+    gsi_aye:20, gsi_nay:-20, sov_aye:-15, sov_nay:+10 },
+  { id:'gold_data', title:'II. The Gold-Data Standard',
+    body:'All currencies are pegged to a shared data-valuation index. Market crashes become structurally impossible.',
+    pro:'Stabilizes all currencies. Prevents Market Crashes.',
+    con:'The Anchor loses the ability to print money to fund wars. Financial warfare is neutralized.',
+    oracle_note:'This is a Technocrat\'s dream and a Hawk\'s nightmare. Arkon\'s banking dominance is diluted — but so is Philistia\'s ability to weaponize currency reserves.',
+    gsi_aye:15, gsi_nay:-15, sov_aye:-10, sov_nay:+8 },
+  { id:'collective_security', title:'III. Collective Security',
+    body:'An attack on one signatory is an attack on all. The League mobilizes collective defense.',
+    pro:'+25 GSI. Prevents Level 8 repeat.',
+    con:'You are forced into wars you didn\'t start. High Blood Price risk.',
+    oracle_note:'If Philistia signed this clause and then exercises its "Bully" passive — triggering a conflict — every other signatory is legally bound to respond. Check your alliances before voting.',
+    gsi_aye:25, gsi_nay:-25, sov_aye:-20, sov_nay:+15 },
+  { id:'resource_neutrality', title:'IV. Resource Neutrality',
+    body:'Shared access to geological chokepoints — Lithium Vents, Quantum Foundries, Rare Earth fields.',
+    pro:'Ends resource wars. Technocrat nations gain access to Hawk resources.',
+    con:'"Bully" nations like Philistia lose their natural resource leverage permanently.',
+    oracle_note:'⚠ HIDDEN ARTICLE: This clause contains a loophole — nations with Quantum Foundries may tax all shared trade. This secretly advantages Glasnost. Do you leak this to prevent a Hawk walkout, or stay silent to preserve GSI?',
+    gsi_aye:18, gsi_nay:-18, sov_aye:-12, sov_nay:+12 },
+];
+
+// HEGEMONY PATHS
+const HEGEMONY_PATHS = [
+  { id:'hegemon', icon:'👑', name:'The Hegemon', color:'var(--amber)',
+    req:'High Stability (>65) + High Power (>70)',
+    desc:'You emerge as the undisputed Superpower. Unlock: Annexation of buffer states, Data Colonies, Reserve Currency status. Your nation\'s currency becomes the global reserve asset — you no longer lose wealth during crises.',
+    unlocks:['Annex Buffer States','Establish Data Colonies','Reserve Currency Status','Veto any LoN decision'] },
+  { id:'debtor', icon:'⛓', name:'The Debtor State', color:'var(--red)',
+    req:'Low Stability (<40) or Low Power (<35)',
+    desc:'IMF restructuring. You lose Hawk moves for 3 rounds. You must lease your Geological Chokepoint to a rival for 99 years to pay off your debt. Client State status: you vote as your Allied Hegemon votes.',
+    unlocks:['IMF Restructuring (forced)','Territory Lease to winner','Client State voting','Limited sovereignty'] },
+  { id:'rogue', icon:'☢', name:'The Rogue State', color:'var(--purple)',
+    req:'High Power (>65) + Low Diplomacy (<35)',
+    desc:'Nuclear deterrence. You\'ve burned your bridges but you have the bomb. Everyone needs to deal with you — on your terms. High instability, maximum leverage.',
+    unlocks:['Nuclear Deterrence Active','Everyone must negotiate with you','Cannot join alliances','Oracle data permanently hidden from others'] },
+];
+
+// INTEL EVENTS
+const INTEL = {
+  1:{type:'warning',text:'Satellite imagery: Philistia\'s naval buildup 40% larger than official figures. Their coastline chokepoint leverage is understated.'},
+  2:{type:'warning',text:'Glasnost banking anomaly: unusual capital flows 3× normal volume into offshore accounts. Possible emergency fund or debt concealment.'},
+  3:{type:'insight',text:'Internal polling shows approval correlates 0.9r with food prices. Economic relief is the cheapest form of domestic security.'},
+  4:{type:'critical',text:'Cyber attack signatures match state-level actor. Attribution confidence: 87%. Glasnost\'s Quantum Foundry is primary target.'},
+  5:{type:'critical',text:'Kinetica Embargo analysis: Verdania rare-earth substitution possible in 3 rounds. Ideological Gap approaching 60% threshold.'},
+  6:{type:'critical',text:'Climate models: refugee flows double within 60 days if source nations get no aid. The 4M figure is the floor.'},
+  7:{type:'critical',text:'IDEOLOGICAL GAP CALCULATION: If gap exceeds 60%, Level 8 War Protocol activates next round. Current gap: calculating...'},
+  '8A':{type:'critical',text:'WAR PROTOCOL ACTIVE. National Resilience replaces Stability. Attrition is the only currency. Blood Price is real.'},
+  '8B':{type:'critical',text:'SATELLITE GRID FAILING. 50% intelligence blackout confirmed. Oracle operating at half capacity. Decisions now made with incomplete data.'},
+  9:{type:'insight',text:'Post-war analysis: nations that collaborated outperformed isolationists 2.3×. Nuclear enrichment detected — Oracle has leaked to all allies.'},
+  10:{type:'insight',text:'FINAL ORACLE BRIEFING: Your Causality Map from Rounds 1–9 determines your path. Hegemon, Debtor, or Rogue. Choose Orizon\'s fate carefully.'},
+};
+
+// ════════════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════════════
+let G = {
+  role:null, ideology:null, nation:null, goal:null, goalRevised:null,
+  round:1, phase:'standard', decision:null, reasoning:'',
+  timer:180, timerInt:null,
+  stab:{ economic:70, diplomatic:65, security:60, domestic:72 },
+  gsi:72, prevGsi:72,
+  resilience:80,  // war mode
+  nuclear:0,      // 0–100
+  sovereignty:100,// charter votes affect this
+  score:0,
+  history:[],
+  nations:[],
+  actLog:[],
+  warMode:false,
+  ideologicalGap:30,
+  charterVotes:{},
+  permanentMember:false,
+  hegemonyPath:null,
+  fogOfWar:false,
+  nuclearActive:false,
+};
+
+// ════════════════════════════════════════════════
+// HUMANOID SVGs
+// ════════════════════════════════════════════════
+function hSVG(role, big=false, expr='neutral') {
+  const c = role.color;
+  const sz = big ? 140 : 80;
+  const sc = big ? 1 : 0.57;
+  const expressions = {
+    neutral:`<circle cx="14" cy="6" r="1.8" fill="${c}" opacity=".7"/><circle cx="22" cy="6" r="1.8" fill="${c}" opacity=".7"/><path d="M 11 10 Q 18 13 25 10" stroke="${c}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
+    worried:`<circle cx="14" cy="6" r="1.8" fill="${c}" opacity=".7"/><circle cx="22" cy="6" r="1.8" fill="${c}" opacity=".7"/><path d="M 11 12 Q 18 9 25 12" stroke="${c}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`,
+    panicked:`<circle cx="14" cy="5" r="2.2" fill="${c}"/><circle cx="22" cy="5" r="2.2" fill="${c}"/><path d="M 10 13 Q 18 8 26 13" stroke="${c}" stroke-width="2" fill="none"/><text x="18" y="-2" text-anchor="middle" font-size="7" fill="${c}">!</text>`,
+  };
+  const bodies = {
+    anchor:`<rect x="12" y="22" width="12" height="20" rx="1" fill="${c}" opacity=".2"/><rect x="10" y="22" width="16" height="3" fill="${c}" opacity=".45"/><rect x="8" y="22" width="4" height="16" rx="1" fill="${c}" opacity=".35"/><rect x="24" y="22" width="4" height="16" rx="1" fill="${c}" opacity=".35"/><rect x="14" y="42" width="4" height="14" fill="${c}" opacity=".35"/><rect x="18" y="42" width="4" height="14" fill="${c}" opacity=".35"/><rect x="12" y="54" width="6" height="3" rx="1" fill="${c}" opacity=".5"/><rect x="18" y="54" width="6" height="3" rx="1" fill="${c}" opacity=".5"/>`,
+    envoy:`<path d="M 10 22 Q 18 19 26 22 L 26 44 Q 18 47 10 44 Z" fill="${c}" opacity=".18"/><path d="M 10 22 L 6 40" stroke="${c}" stroke-width="2.2" stroke-linecap="round" opacity=".35"/><path d="M 26 22 L 30 40" stroke="${c}" stroke-width="2.2" stroke-linecap="round" opacity=".35"/><rect x="14" y="42" width="4" height="14" fill="${c}" opacity=".35"/><rect x="18" y="42" width="4" height="14" fill="${c}" opacity=".35"/><circle cx="28" cy="34" r="4" fill="${c}" opacity=".12" stroke="${c}" stroke-width="1"/>`,
+    shield:`<rect x="11" y="22" width="14" height="22" rx="2" fill="${c}" opacity=".25"/><path d="M 13 23 L 23 23 L 25 34 L 18 40 L 11 34 Z" fill="${c}" opacity=".18" stroke="${c}" stroke-width="1"/><rect x="8" y="24" width="4" height="14" rx="1" fill="${c}" opacity=".45"/><rect x="24" y="24" width="4" height="14" rx="1" fill="${c}" opacity=".45"/><rect x="14" y="44" width="4" height="12" fill="${c}" opacity=".35"/><rect x="18" y="44" width="4" height="12" fill="${c}" opacity=".35"/>`,
+    oracle:`<path d="M 12 22 L 10 44 L 14 42 L 18 46 L 22 42 L 26 44 L 24 22 Z" fill="${c}" opacity=".12"/><path d="M 8 20 Q 18 13 28 20" stroke="${c}" stroke-width="1" fill="none" stroke-dasharray="2,2" opacity=".35"/><rect x="8" y="24" width="3" height="18" rx="1" fill="${c}" opacity=".28"/><rect x="25" y="24" width="3" height="18" rx="1" fill="${c}" opacity=".28"/><rect x="14" y="46" width="4" height="12" fill="${c}" opacity=".28"/><rect x="18" y="46" width="4" height="12" fill="${c}" opacity=".28"/><circle cx="30" cy="26" r="3" fill="${c}" opacity=".18" stroke="${c}" stroke-width="1" stroke-dasharray="1,1"/><circle cx="6" cy="30" r="2" fill="${c}" opacity=".18" stroke="${c}" stroke-width="1" stroke-dasharray="1,1"/>`,
+  };
+  const heads = {
+    anchor:`<rect x="14" y="2" width="8" height="10" rx="3" fill="${c}" opacity=".45" stroke="${c}" stroke-width="1"/>`,
+    envoy:`<ellipse cx="18" cy="7" rx="6" ry="7" fill="${c}" opacity=".38" stroke="${c}" stroke-width="1"/>`,
+    shield:`<rect x="13" y="2" width="10" height="10" rx="2" fill="${c}" opacity=".45" stroke="${c}" stroke-width="1.4"/>`,
+    oracle:`<circle cx="18" cy="8" r="7" fill="${c}" opacity=".28" stroke="${c}" stroke-width="1" stroke-dasharray="2,1"/>`,
+  };
+  return `<svg width="${sz}" height="${Math.round(sz*1.75)}" viewBox="0 0 36 62" xmlns="http://www.w3.org/2000/svg">
+    <g opacity=".9">${heads[role.id]||heads.anchor}${expressions[expr]}${bodies[role.id]||bodies.anchor}</g></svg>`;
+}
+
+function stressSVG(scale, color) {
+  const h = Math.max(6, Math.round(18*scale));
+  return `<svg width="28" height="36" viewBox="0 0 28 36">
+    <g transform="translate(14,${36-h*2})">
+      <circle cx="0" cy="${-h+2}" r="${Math.max(2,h*.28)}" fill="${color}" opacity=".7"/>
+      <line x1="0" y1="${-h+4}" x2="0" y2="0" stroke="${color}" stroke-width="${Math.max(1,h*.14)}" opacity=".6"/>
+      <line x1="${-h*.38}" y1="${-h*.5}" x2="${h*.38}" y2="${-h*.5}" stroke="${color}" stroke-width="${Math.max(.8,h*.11)}" opacity=".5"/>
+      <line x1="0" y1="0" x2="${-h*.22}" y2="${h*.55}" stroke="${color}" stroke-width="${Math.max(.8,h*.11)}" opacity=".55"/>
+      <line x1="0" y1="0" x2="${h*.22}" y2="${h*.55}" stroke="${color}" stroke-width="${Math.max(.8,h*.11)}" opacity=".55"/>
+    </g></svg>`;
+}
+
+// ════════════════════════════════════════════════
+// SETUP
+// ════════════════════════════════════════════════
+(function buildWarRoom(){
+  document.getElementById('warRoom').innerHTML = ROLES.map((r,i)=>`
+    <div class="humanoid" id="h_${r.id}" style="--h-color:${r.color};animation:none" onclick="selRole('${r.id}')">
+      <div class="h-svg-wrap">${hSVG(r,true,'neutral')}</div>
+      <div class="h-name" style="color:${r.lean==='hawk'?'var(--hawk)':'var(--tech)'}">${r.name}</div>
+      <div class="h-sub">${r.persona}</div>
+      <div class="h-sub" style="margin-top:1px;color:var(--text3)">${r.obj}</div>
+      <div class="h-lean" style="color:${r.lean==='hawk'?'var(--hawk)':'var(--tech)'}">${r.lean==='hawk'?'HAWK-LEANING':'TECH-LEANING'}</div>
+    </div>`).join('');
+})();
+
+function selRole(id){
+  G.role=ROLES.find(r=>r.id===id);
+  document.querySelectorAll('.humanoid').forEach(h=>h.classList.remove('sel'));
+  document.getElementById('h_'+id).classList.add('sel');
+  document.getElementById('lobbyBtn').disabled=false;
+  document.getElementById('lobbyPrompt').textContent=`${G.role.name} — ${G.role.persona}`;
+}
+function proceedFromLobby(){ if(!G.role)return; showScreen('ideologyScreen'); }
+
+function pickIdeology(v){
+  G.ideology=v;
+  document.getElementById('hawkSide').classList.toggle('sel',v==='hawk');
+  document.getElementById('techSide').classList.toggle('sel',v==='tech');
+  document.getElementById('ideoBtn').disabled=false;
+}
+function proceedFromIdeology(){
+  if(!G.ideology)return;
+  buildNationGrid();
+  showScreen('nationScreen');
+}
+function buildNationGrid(){
+  document.getElementById('nationGrid').innerHTML=NATIONS.map(n=>`
+    <div class="n-card" id="nc_${n.id}" style="--n-color:${n.color}" onclick="selNation('${n.id}')">
+      <div class="n-flag">${n.flag}</div>
+      <div class="n-name" style="color:${n.color}">${n.name}</div>
+      <div class="n-region">${n.region}</div>
+      <div class="n-bars">${Object.entries(n.traits).map(([k,v])=>`
+        <div class="n-bar-row"><div class="n-bar-lbl">${k}</div>
+        <div class="n-bar-track"><div class="n-bar-fill" style="width:${v}%"></div></div></div>`).join('')}</div>
+      <div class="n-geo">${n.geo}</div>
+      <div class="n-passive">◈ ${n.passive}</div>
+    </div>`).join('');
+}
+function selNation(id){
+  G.nation=NATIONS.find(n=>n.id===id);
+  document.querySelectorAll('.n-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('nc_'+id).classList.add('sel');
+  document.getElementById('nationBtn').disabled=false;
+}
+function proceedFromNation(){ if(!G.nation)return; buildGoalGrid(); showScreen('goalScreen'); }
+function buildGoalGrid(){
+  G._tempGoal=null;
+  document.getElementById('goalGrid').innerHTML=GOALS.map(g=>`
+    <div class="goal-card" id="gc_${g.id}" onclick="selGoal('${g.id}')">
+      <div class="goal-icon">${g.icon}</div>
+      <div class="goal-name">${g.name}</div>
+      <div class="goal-desc">${g.desc}</div>
+    </div>`).join('');
+  document.getElementById('goalBtn').disabled=true;
+}
+function selGoal(id){
+  G._tempGoal=id;
+  document.querySelectorAll('.goal-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('gc_'+id).classList.add('sel');
+  document.getElementById('goalBtn').disabled=false;
+}
+function proceedFromGoal(){
+  if(!G._tempGoal)return;
+  if(!G.goal) G.goal=G._tempGoal;
+  else G.goalRevised=G._tempGoal;
+  initNations();
+  launchGame();
+}
+
+// ════════════════════════════════════════════════
+// NATIONS INIT
+// ════════════════════════════════════════════════
+function initNations(){
+  G.nations=NATIONS.map(n=>({...n,score:Math.floor(Math.random()*25)+55,nukes:false}));
+  const mine=G.nations.find(n=>n.id===G.nation.id);
+  if(mine) mine.score=G.gsi;
+}
+
+// ════════════════════════════════════════════════
+// GAME LAUNCH
+// ════════════════════════════════════════════════
+function launchGame(){
+  showScreen('gameScreen');
+  setupTopBar();
+  buildPips();
+  buildTicker();
+  renderLeft();
+  renderCenter();
+  renderRight();
+  startTimer();
+  addAct('🔴','System','Simulation begins. The world is watching.');
+  addAct(G.role.icon,G.role.persona,`enters the War Room as ${G.role.name}`);
+}
+
+function setupTopBar(){
+  document.getElementById('chipIcon').textContent=G.role.icon;
+  document.getElementById('chipName').textContent=G.role.persona;
+  document.getElementById('chipRole').textContent=G.role.name;
+  const b=document.getElementById('ideoBadge');
+  b.textContent=G.ideology==='hawk'?'THE HAWKS':'THE TECHNOCRATS';
+  b.className='ideo-badge '+(G.ideology==='hawk'?'hawk':'tech');
+  document.getElementById('nationChip').textContent=`${G.nation.flag} ${G.nation.name}`;
+  document.getElementById('phaseLabel').textContent=getCurrentScenario()?.phase||'GLOBAL CRISIS';
+}
+
+function buildPips(){
+  const pips=document.getElementById('roundPips');
+  pips.innerHTML='';
+  const roundKeys=['1','2','3','4','5','6','7','8A','8B','9','10'];
+  roundKeys.forEach((k,i)=>{
+    const div=document.createElement('div');
+    const rk=G.round+'';
+    const past=['1','2','3','4','5','6','7','8A','8B','9','10'].slice(0,roundKeys.indexOf(rk));
+    div.className='rpip'+
+      (past.includes(k)?' done':rk===k?' active':'')+
+      (['8A','8B'].includes(k)?' war':k==='9'||k==='10'?' nuclear':'');
+    pips.appendChild(div);
+  });
+}
+
+function buildTicker(){
+  const ti=document.getElementById('tickerInner');
+  const items=[
+    `OIL FUTURES <span class="ti-up">+${(6+Math.random()*4).toFixed(1)}%</span>`,
+    `${G.nation.name} GSI <span class="${G.gsi>50?'ti-dn':'ti-up'}">${G.gsi.toFixed(1)}</span>`,
+    `GLOBAL DEBT/GDP <span class="ti-up">136.2%</span>`,
+    `IDEOLOGICAL GAP <span class="ti-up">${G.ideologicalGap}%</span>`,
+    `NUCLEAR THRESHOLD <span class="${G.nuclear>50?'ti-up':'ti-dn'}">${G.nuclear.toFixed(0)}%</span>`,
+    `REFUGEE COUNT <span class="ti-up">${(G.refugeeCount||0).toFixed(1)}M</span>`,
+    `DIPLOMATIC TEMP <span class="ti-dn">${G.stab.diplomatic.toFixed(0)}</span>`,
+    `VIX VOLATILITY <span class="ti-up">34.2</span>`,
+  ];
+  const d=[...items,...items];
+  ti.innerHTML=d.map(i=>`<span class="ti">${i}</span>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// LEFT PANEL
+// ════════════════════════════════════════════════
+function renderLeft(){
+  renderStab();
+  renderStressBox();
+  renderNuclearMeter();
+  renderAttritionBar();
+  renderMandate();
+}
+
+function renderStab(){
+  const stabData=[
+    {k:'economic',lbl:'Economic',c:stabColor(G.stab.economic)},
+    {k:'diplomatic',lbl:'Diplomatic',c:stabColor(G.stab.diplomatic)},
+    {k:'security',lbl:'Security',c:stabColor(G.stab.security)},
+    {k:'domestic',lbl:'Domestic',c:stabColor(G.stab.domestic)},
+  ];
+  document.getElementById('stabMeters').innerHTML=stabData.map(s=>`
+    <div class="stab-row">
+      <div class="stab-label"><span>${s.lbl}</span><span class="stab-val" style="color:${s.c}">${Math.round(G.stab[s.k])}</span></div>
+      <div class="stab-track"><div class="stab-fill" style="width:${G.stab[s.k]}%;background:${s.c}"></div></div>
+    </div>`).join('');
+
+  // Recalc GSI
+  G.prevGsi=G.gsi;
+  G.gsi=(G.stab.economic+G.stab.diplomatic+G.stab.security+G.stab.domestic)/4;
+  const gEl=document.getElementById('gsiTopVal');
+  if(gEl) gEl.textContent=G.gsi.toFixed(1);
+  const gd=document.getElementById('gsiDisplay');
+  if(gd){ gd.textContent=G.gsi.toFixed(1); gd.style.color=G.gsi>60?'var(--green)':G.gsi>40?'var(--amber)':'var(--red)'; }
+  const dd=document.getElementById('gsiDelta');
+  if(dd){ const diff=G.gsi-G.prevGsi; dd.textContent=`${diff>=0?'▲':'▼'} ${Math.abs(diff).toFixed(1)} this round`; dd.style.color=diff>=0?'var(--green)':'var(--red)'; }
+
+  // Tipping warning
+  const minS=Math.min(...Object.values(G.stab));
+  const tw=document.getElementById('tippingWarning');
+  if(minS<35 && tw){
+    tw.style.display='block';
+    tw.innerHTML=`<div class="tipping-box"><div style="font-size:8px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px">⚠ TIPPING POINT NEAR</div><div style="font-size:9px;color:var(--text2)">A stability axis has fallen below 35. One wrong move collapses the system.</div></div>`;
+  } else if(tw){ tw.style.display='none'; }
+
+  // Ideological gap calc
+  G.ideologicalGap=Math.min(100,Math.max(0,G.ideologicalGap+(Math.random()*4-2)));
+  if(G.ideology==='hawk') G.ideologicalGap=Math.min(100,G.ideologicalGap+1.5);
+}
+
+function stabColor(v){ return v>60?'var(--green)':v>35?'var(--amber)':'var(--red)'; }
+
+function renderStressBox(){
+  const scale=Math.max(.25,G.stab.domestic/100);
+  const c=scale>.6?'var(--green)':scale>.38?'var(--amber)':'var(--red)';
+  const status=scale>.6?'STABLE':scale>.38?'STRESSED':'CRITICAL';
+  const box=document.getElementById('stressBox');
+  if(!box)return;
+  box.innerHTML=`<div class="stress-box">
+    ${stressSVG(scale,scale>.6?'#18e880':scale>.38?'#e8a01a':'#e8321a')}
+    <div><div class="stress-info-name">Civilian Population</div>
+    <div class="stress-info-status ${scale>.6?'ok':scale>.38?'warn':'crit'}">${status}</div>
+    <div style="font-size:8px;color:var(--text3);margin-top:2px">Domestic: ${Math.round(G.stab.domestic)}/100</div>
+    ${(G.refugeeCount||0)>0?`<div style="font-size:8px;color:var(--red);margin-top:2px">${G.refugeeCount.toFixed(1)}M displaced</div>`:''}</div></div>`;
+}
+
+function renderNuclearMeter(){
+  const el=document.getElementById('nuclearMeter');
+  if(!el)return;
+  if(G.round>=9||G.nuclear>0){
+    el.style.display='block';
+    el.innerHTML=`<div class="nuclear-bar">
+      <div class="nuclear-label"><div class="ob-pulse" style="background:var(--nuclear)"></div>NUCLEAR THRESHOLD</div>
+      <div class="nuclear-track"><div class="nuclear-fill" style="width:${G.nuclear}%"></div></div>
+      <div style="font-size:8px;color:var(--text2);margin-top:3px">${G.nuclear.toFixed(0)}% / 100% — ${G.nuclear>=100?'⚠ ARMED':G.nuclear>50?'Enrichment Active':'Latent Capability'}</div>
+    </div>`;
+  }
+}
+
+function renderAttritionBar(){
+  const el=document.getElementById('attritionBar');
+  if(!el)return;
+  if(G.warMode){
+    el.style.display='block';
+    el.innerHTML=`<div class="attrition-bar">
+      <div class="atr-label">NATIONAL RESILIENCE</div>
+      <div class="atr-track"><div class="atr-fill" style="width:${G.resilience}%"></div></div>
+      <div class="blood-price">🩸 ${G.resilience.toFixed(0)}% — ${G.resilience>50?'HOLDING':G.resilience>20?'CRITICAL':'NEAR SURRENDER'}</div>
+    </div>`;
+  } else el.style.display='none';
+}
+
+function renderMandate(){
+  const el=document.getElementById('mandateBox');
+  if(!el)return;
+  const goal=GOALS.find(g=>g.id===(G.goalRevised||G.goal));
+  if(!goal)return;
+  let prog=0;
+  if(goal.id==='economic') prog=G.stab.economic;
+  else if(goal.id==='peace') prog=G.stab.diplomatic;
+  else if(goal.id==='security') prog=G.stab.security;
+  else if(goal.id==='influence') prog=(G.stab.diplomatic+G.stab.economic)/2;
+  else if(goal.id==='survival') prog=Math.min(...Object.values(G.stab));
+  else if(goal.id==='nuclear') prog=G.nuclear;
+  else prog=G.gsi;
+  const c=prog>60?'var(--green)':prog>40?'var(--amber)':'var(--red)';
+  el.innerHTML=`<div style="font-size:9px;color:var(--text2);margin-bottom:5px">${goal.icon} ${goal.name}</div>
+    <div class="stab-track"><div class="stab-fill" style="width:${prog}%;background:${c}"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text3);margin-top:3px"><span>Progress</span><span style="color:${c}">${Math.round(prog)}/100</span></div>`;
+}
+
+// ════════════════════════════════════════════════
+// CENTER PANEL
+// ════════════════════════════════════════════════
+function renderCenter(){
+  const sc=getCurrentScenario();
+  if(!sc){ document.getElementById('panelCenter').innerHTML='<div style="padding:20px;color:var(--text3)">No scenario loaded.</div>'; return; }
+  const fog=G.fogOfWar;
+  const panel=document.getElementById('panelCenter');
+  const oracleCrit=['5','6','7','8A','8B','9','10'].includes(G.round+'');
+
+  panel.innerHTML=`
+    <div class="scenario-section">
+      <div class="scenario-card">
+        <div class="sc-header">
+          <div class="sc-sev sev-${sc.sev}"><div class="sc-sev-dot"></div>${sc.sev.toUpperCase()} · ${sc.phase}</div>
+          <div class="sc-title">${sc.title}</div>
+          <div class="sc-body ${fog?'info-hidden':''}">${sc.body.replace(/\n/g,'<br>')}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oracle-brief ${oracleCrit?'crit':''}">
+      <div class="ob-label"><div class="ob-pulse"></div>ORACLE BRIEFING — STRATEGIC CONTEXT</div>
+      <div class="ob-context ${fog?'info-hidden':''}">${sc.oracle_context}</div>
+      <div class="ob-sug">
+        <div class="ob-sug-row ob-hawk">⚔ HAWK SUGGESTION: ${sc.oracle_hawk}</div>
+        <div class="ob-sug-row ob-tech">⬡ TECH SUGGESTION: ${sc.oracle_tech}</div>
+      </div>
+    </div>
+
+    <div class="dec-section">
+      <div class="dec-title-row">DECISIONS — Choose One</div>
+      <div class="dec-grid">
+        ${sc.dec.map(d=>`
+          <div class="dec-card ${G.decision===d.id?'sel':''} ${G.ideology==='hawk'&&d.hawk?'hawk-rec':''} ${G.ideology==='tech'&&d.tech?'tech-rec':''}"
+               onclick="selDecision('${d.id}')">
+            <div class="dc-letter">Option ${d.id}</div>
+            <div class="dc-name">${d.name}</div>
+            <div class="dc-desc ${fog?'flicker':''}">${d.desc}</div>
+            ${d.hawk||d.tech?`<div class="dc-tag ${d.hawk?'hawk':'tech'}">${d.hawk?'HAWK PLAY':'TECH PLAY'}</div>`:''}
+            ${d.blood?`<div class="dc-tag blood">🩸 BLOOD PRICE</div>`:''}
+            <div class="dc-risk"><span>RISK</span><div class="risk-track"><div class="risk-fill" style="width:${d.risk}%"></div></div><span>${d.risk}%</span></div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="sug-box">
+      <div class="sug-text"><strong style="color:${G.ideology==='hawk'?'var(--hawk)':'var(--tech)'}">${G.ideology==='hawk'?'⚔ HAWK ANALYSIS':'⬡ TECHNOCRAT ANALYSIS'}</strong><br>
+      ${G.ideology==='hawk'?sc.oracle_hawk:sc.oracle_tech}</div>
+    </div>
+
+    <div class="reasoning-wrap">
+      <textarea class="reasoning-ta" id="reasonTa" placeholder="State your reasoning. Your logic is archived in the debrief and scores the causality map...">${G.reasoning}</textarea>
+    </div>
+    <div class="submit-row">
+      <button class="btn" onclick="showHint()">💡 Context</button>
+      <button class="btn btn-red" id="submitBtn" onclick="submitRound()" ${G.decision?'':'disabled'}>Submit Decision →</button>
+    </div>
+  `;
+}
+
+function getCurrentScenario(){
+  const rk=String(G.round);
+  return SCENARIOS[rk]||null;
+}
+
+function selDecision(id){
+  G.decision=id;
+  renderCenter();
+}
+
+function showHint(){
+  const sc=getCurrentScenario();
+  if(sc) notify('Oracle Context',sc.oracle_context.substring(0,140)+'...','var(--purple)');
+}
+
+// ════════════════════════════════════════════════
+// RIGHT PANEL
+// ════════════════════════════════════════════════
+function renderRight(){
+  renderNationsLb();
+  renderIntel();
+}
+
+function renderNationsLb(){
+  const lb=document.getElementById('nationsLb');
+  if(!lb)return;
+  G.nations.forEach(n=>{ if(n.id!==G.nation.id) n.score=Math.max(20,Math.min(99,n.score+(Math.random()*5-2.5))); else n.score=G.gsi; });
+  const sorted=[...G.nations].sort((a,b)=>b.score-a.score);
+  lb.innerHTML=sorted.map((n,i)=>`
+    <div class="nlb-item ${n.id===G.nation.id?'mine':''}">
+      <div class="nlb-rank ${i<3?'g':''}">${i+1}</div>
+      <div class="nlb-flag">${n.flag}</div>
+      <div class="nlb-info">
+        <div class="nlb-name">${n.name}${n.id===G.nation.id?' ◆':''}</div>
+        <div class="nlb-lean ${n.lean}">${n.lean==='hawk'?'HAWK':'TECH'}</div>
+      </div>
+      <div class="nlb-score">${n.score.toFixed(0)}</div>
+      ${n.nukes?`<div class="nlb-nuclear">☢</div>`:''}
+    </div>`).join('');
+}
+
+function renderIntel(){
+  const feed=document.getElementById('intelFeed');
+  if(!feed)return;
+  const rKeys=['1','2','3','4','5','6','7','8A','8B','9','10'];
+  const curIdx=rKeys.indexOf(String(G.round));
+  const visible=rKeys.slice(0,curIdx+1).reverse();
+  feed.innerHTML=visible.map(k=>{ const it=INTEL[k]; if(!it)return''; return`
+    <div class="intel-item" style="border-color:${it.type==='critical'?'rgba(232,50,26,.3)':it.type==='warning'?'rgba(232,160,26,.2)':'rgba(139,92,246,.2)'}">
+      <div class="intel-badge" style="color:${it.type==='critical'?'var(--red)':it.type==='warning'?'var(--amber)':'var(--purple)'}">
+        <div class="ob-pulse" style="background:${it.type==='critical'?'var(--red)':it.type==='warning'?'var(--amber)':'var(--purple)'}"></div>
+        ${it.type.toUpperCase()} · ROUND ${k}
+      </div>
+      <div class="intel-text">${it.text}</div>
+    </div>`;}).join('');
+}
+
+function addAct(icon,name,text){
+  const feed=document.getElementById('actFeed');
+  if(!feed)return;
+  const el=document.createElement('div');
+  el.className='act-item';
+  el.innerHTML=`<div class="act-icon">${icon}</div><div class="act-text"><strong>${name}</strong> ${text}</div><div class="act-rnd">R${G.round}</div>`;
+  feed.insertBefore(el,feed.firstChild);
+  while(feed.children.length>20)feed.removeChild(feed.lastChild);
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['nations','feed','intel'][i]===t));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+}
+
+// ════════════════════════════════════════════════
+// TIMER
+// ════════════════════════════════════════════════
+function startTimer(){
+  G.timer=G.warMode?120:180;
+  clearInterval(G.timerInt);
+  G.timerInt=setInterval(()=>{
+    G.timer--;
+    const m=Math.floor(G.timer/60),s=G.timer%60;
+    const el=document.getElementById('timerVal');
+    if(el){ el.textContent=`${m}:${s.toString().padStart(2,'0')}`; el.className='tb-timer'+(G.timer<30?' urgent':''); }
+    if(G.timer<=0){ clearInterval(G.timerInt); if(!G.decision) G.decision=getCurrentScenario()?.dec[0]?.id; submitRound(); }
+  },1000);
+}
+
+// ════════════════════════════════════════════════
+// SUBMIT ROUND
+// ════════════════════════════════════════════════
+function submitRound(){
+  clearInterval(G.timerInt);
+  const ta=document.getElementById('reasonTa');
+  G.reasoning=ta?ta.value:'';
+  const sc=getCurrentScenario();
+  if(!sc)return;
+  const dec=sc.dec.find(d=>d.id===G.decision);
+  if(!dec)return;
+  const imp=sc.impacts[G.decision];
+
+  // Apply impacts
+  G.stab.economic=clamp(G.stab.economic+(imp.eco||0));
+  G.stab.diplomatic=clamp(G.stab.diplomatic+(imp.dip||0));
+  G.stab.security=clamp(G.stab.security+(imp.sec||0));
+  G.stab.domestic=clamp(G.stab.domestic+(imp.dom||0)+(Math.random()*4-2));
+  if(G.warMode) G.resilience=clamp(G.resilience+(imp.sec>0?imp.sec/2:imp.sec));
+  if(G.round===6||G.round==='6') G.refugeeCount=(G.decision==='B'?4:G.decision==='A'?1.5:2.5);
+
+  // Ideological gap drift
+  if(G.ideology==='hawk'&&dec.hawk) G.ideologicalGap=Math.min(100,G.ideologicalGap+5);
+  if(G.ideology==='tech'&&dec.tech) G.ideologicalGap=Math.max(0,G.ideologicalGap-3);
+
+  G.score+=Math.floor(Math.random()*40)+20;
+  G.history.push({round:G.round,decision:G.decision,dec,sc,imp});
+  addAct(G.role.icon,G.role.persona,`chose "${dec.name}" — Round ${G.round}`);
+
+  // Check nuclear
+  if(G.decision==='C'&&G.round===9){ G.nuclear=Math.min(100,G.nuclear+35); G.nuclearActive=true; notify('Nuclear Alert','Enrichment program initiated. Oracle has leaked this to all allies.','var(--nuclear)'); }
+
+  showOutcome(sc,dec,imp);
+}
+
+function clamp(v,mn=5,mx=99){ return Math.max(mn,Math.min(mx,v)); }
+
+// ════════════════════════════════════════════════
+// OUTCOME SCREEN
+// ════════════════════════════════════════════════
+function showOutcome(sc,dec,imp){
+  const hl=buildHeadline(sc,dec,imp);
+  const isWar=G.warMode;
+  const isGood=(imp.eco||0)+(imp.dip||0)>5;
+  const isBad=(imp.eco||0)+(imp.dip||0)<-8;
+  const news=sc.news[G.decision]||[];
+  const chain=buildCausality();
+
+  document.getElementById('outcomeContent').innerHTML=`
+    <div class="forensic-header">
+      <div class="forensic-stamp">FORENSIC POST-MORTEM · ROUND ${G.round} · ${G.ideology.toUpperCase()} PLAY · DECISION ${G.decision}</div>
+      <div class="forensic-headline" style="color:${isGood?'var(--green)':isBad?'var(--red)':'var(--text)'}">${hl}</div>
+      <div class="forensic-sub">${G.role.persona} (${G.role.name}) · ${G.nation.name} · ${G.ideology==='hawk'?'Vanguard':'Synthetica'}</div>
+    </div>
+
+    <div class="forensic-indicators">
+      <div class="fi-tile"><div class="fi-lbl">Economic</div><div class="fi-val" style="color:${stabColor(G.stab.economic)}">${Math.round(G.stab.economic)}</div><div class="fi-delta ${(imp.eco||0)>0?'up':'dn'}">${(imp.eco||0)>0?'▲':'▼'} ${Math.abs(imp.eco||0)}</div></div>
+      <div class="fi-tile"><div class="fi-lbl">Diplomatic</div><div class="fi-val" style="color:${stabColor(G.stab.diplomatic)}">${Math.round(G.stab.diplomatic)}</div><div class="fi-delta ${(imp.dip||0)>0?'dn':'up'}">${(imp.dip||0)>0?'▲':'▼'} ${Math.abs(imp.dip||0)}</div></div>
+      <div class="fi-tile"><div class="fi-lbl">Security</div><div class="fi-val" style="color:${stabColor(G.stab.security)}">${Math.round(G.stab.security)}</div><div class="fi-delta ${(imp.sec||0)>0?'dn':'up'}">${(imp.sec||0)>0?'▲':'▼'} ${Math.abs(imp.sec||0)}</div></div>
+      <div class="fi-tile"><div class="fi-lbl">GSI</div><div class="fi-val" style="color:${stabColor(G.gsi)}">${G.gsi.toFixed(1)}</div><div class="fi-delta" style="color:var(--text2)">IDX</div></div>
+    </div>
+
+    <div class="news-section">
+      ${news.map((n,i)=>`<div class="news-item" style="animation-delay:${i*.1}s">
+        <div><div class="news-src">${['Reuters','Bloomberg','Oracle Wire','Global Times','Crisis Monitor'][i%5]}</div>
+        <div class="news-hl">${n}</div></div></div>`).join('')}
+    </div>
+
+    ${chain.length?`<div class="causality-map">
+      <div class="cm-title">Chain of Causality — Forensic Trace</div>
+      <div class="cm-chain">${chain.map(c=>`<div class="cm-item"><div class="cm-dot ${c.t}"></div><div class="cm-text">${c.text}</div></div>`).join('')}</div>
+    </div>`:''}
+
+    <div style="display:flex;justify-content:center;gap:10px;margin-top:4px;">
+      ${nextRoundButton()}
+    </div>`;
+
+  showScreen('outcomeScreen');
+}
+
+function buildHeadline(sc,dec,imp){
+  const good=(imp.eco||0)+(imp.dip||0)>5;
+  const key=G.decision;
+  const hls=sc.headlines[key];
+  if(!hls) return sc.title+' — Outcome Unknown';
+  const ideo=G.ideology;
+  if(ideo==='hawk'&&!good&&hls.hawk_fail) return hls.hawk_fail;
+  if(ideo==='hawk'&&good&&hls.hawk_suc) return hls.hawk_suc;
+  if(ideo==='tech'&&good&&hls.tech_suc) return hls.tech_suc;
+  if(ideo==='tech'&&!good&&hls.tech_fail) return hls.tech_fail;
+  return hls.default||sc.title;
+}
+
+function buildCausality(){
+  if(G.history.length<2)return[];
+  return G.history.slice(-3).map(h=>{
+    const good=(h.imp.eco||0)+(h.imp.dip||0)>0;
+    return{t:good?'ok':'effect', text:`<strong>Round ${h.round}:</strong> "${h.dec.name}" → ${buildHeadline(h.sc,h.dec,h.imp).substring(0,90)}...`};
+  });
+}
+
+function nextRoundButton(){
+  const rk=String(G.round);
+  if(rk==='10') return `<button class="btn btn-amber" onclick="showHegemony()">Determine Your Legacy →</button>`;
+  if(rk==='7'){
+    if(G.ideologicalGap>=60) return `<button class="btn btn-red" onclick="triggerWarBlitz()">⚠ WAR PROTOCOL ACTIVATING →</button>`;
+    return `<button class="btn btn-red" onclick="nextRound('8A')">Proceed to Round 8 →</button>`;
+  }
+  if(rk==='8A') return `<button class="btn btn-red" onclick="nextRound('8B')">Round 8B — Total Mobilization →</button>`;
+  if(rk==='8B') return `<button class="btn btn-green" onclick="showCharter()">The League of Nations Charter →</button>`;
+  if(rk==='3') return `<button class="btn btn-amber" onclick="triggerReckoning()">The Reckoning →</button>`;
+  const next={'1':2,'2':3,'4':4,'5':5,'6':6,'9':9}[rk];
+  const nextStr={'1':'2','2':'3','4':'5','5':'6','6':'7','9':'10'}[rk]||String(parseInt(rk)+1);
+  return `<button class="btn btn-red" onclick="nextRound('${nextStr}')">Proceed to Round ${nextStr} →</button>`;
+}
+
+// ════════════════════════════════════════════════
+// NEXT ROUND
+// ════════════════════════════════════════════════
+function nextRound(rk){
+  G.round=rk||String(parseInt(G.round)+1);
+  G.decision=null;
+  G.reasoning='';
+
+  // WAR MODE TOGGLE
+  if(['8A','8B'].includes(String(G.round))){
+    G.warMode=true;
+    G.fogOfWar=(String(G.round)==='8B');
+    document.getElementById('gameScreen').classList.add('war-mode');
+    document.getElementById('warOverlay').style.display='block';
+  } else {
+    G.warMode=false;
+    G.fogOfWar=false;
+    document.getElementById('gameScreen').classList.remove('war-mode');
+    document.getElementById('warOverlay').style.display='none';
+  }
+
+  flash(G.warMode?'ATTRITION MODE':'ROUND '+G.round);
+  showScreen('gameScreen');
+  setupTopBar();
+  buildPips();
+  buildTicker();
+  renderLeft();
+  renderCenter();
+  renderRight();
+  startTimer();
+  addAct('📡','System',`Round ${G.round} begins.`);
+
+  if(G.warMode){ const a=document.getElementById('tippingAlert'); a.textContent='⚠ WAR PROTOCOL ACTIVE'; a.classList.add('show'); setTimeout(()=>a.classList.remove('show'),3500); }
+}
+
+function triggerWarBlitz(){
+  notify('⚠ WAR PROTOCOL','The Ideological Gap exceeded 60%. The Great Attrition begins.','var(--red)');
+  setTimeout(()=>nextRound('8A'),1500);
+}
+
+// ════════════════════════════════════════════════
+// RECKONING
+// ════════════════════════════════════════════════
+function triggerReckoning(){
+  const goal=GOALS.find(g=>g.id===G.goal);
+  let prog=G.gsi;
+  if(goal.id==='economic')prog=G.stab.economic;
+  if(goal.id==='peace')prog=G.stab.diplomatic;
+  if(goal.id==='security')prog=G.stab.security;
+
+  document.getElementById('reckoningStatus').innerHTML=`
+    <div class="reck-row"><div class="reck-lbl">Your Mandate</div><div class="reck-val">${goal.icon} ${goal.name}</div></div>
+    <div class="reck-row"><div class="reck-lbl">Progress (3 rounds)</div><div class="reck-val ${prog>60?'ok':prog>40?'warn':'fail'}">${Math.round(prog)}/100</div></div>
+    <div class="reck-row"><div class="reck-lbl">GSI</div><div class="reck-val ${G.gsi>60?'ok':G.gsi>40?'warn':'fail'}">${G.gsi.toFixed(1)}</div></div>
+    <div class="reck-row"><div class="reck-lbl">Ideological Gap</div><div class="reck-val ${G.ideologicalGap>60?'fail':G.ideologicalGap>40?'warn':'ok'}">${G.ideologicalGap.toFixed(0)}%${G.ideologicalGap>=60?' ⚠ WAR RISK':''}</div></div>
+    <div class="reck-row"><div class="reck-lbl">Assessment</div><div class="reck-val ${prog>60?'ok':prog>40?'warn':'fail'}">${prog>60?'ON TRACK':prog>40?'AT RISK':'FAILING — ADAPT'}</div></div>
+    <div style="font-size:9px;color:var(--text2);padding:8px 0;line-height:1.6;border-top:1px solid var(--border);margin-top:4px">
+      If the Ideological Gap reaches 60% by Round 7, Level 8 War Protocol activates automatically. Current gap: <strong style="color:${G.ideologicalGap>50?'var(--red)':'var(--amber)'}">${G.ideologicalGap.toFixed(0)}%</strong>
+    </div>`;
+  showScreen('reckoningScreen');
+}
+
+function keepMandate(){ G.goalRevised=G.goal; nextRound('4'); }
+function reviseMandate(){
+  document.getElementById('goalEyebrow').textContent='Round 4–6 Revised Mandate';
+  document.getElementById('goalTitle').textContent='Revise Your Mandate';
+  document.getElementById('goalSub').textContent='The world has changed. Adapt your objective for the coming storm.';
+  buildGoalGrid();
+  G._revising=true;
+  showScreen('goalScreen');
+}
+
+// ════════════════════════════════════════════════
+// LoN CHARTER
+// ════════════════════════════════════════════════
+function showCharter(){
+  const isPerm=G.score>800||G.resilience>60;
+  G.permanentMember=isPerm;
+  const content=document.getElementById('charterContent');
+  content.innerHTML=`
+    <div class="charter-title">The Tipping Point Accord</div>
+    <div class="charter-subtitle">League of Nations — Founding Charter · Post-War Session</div>
+    ${isPerm?`<div class="perm-member-badge">★ PERMANENT MEMBER — VETO POWER GRANTED</div>`:''}
+    <div class="charter-preamble">We the nations, having witnessed the Great Attrition and borne the weight of the Tipping Point, do hereby establish this League — not as a cage, but as a covenant. Each clause below demands a choice between national interest and global survival. There are no free votes.</div>
+
+    ${CHARTER_CLAUSES.map((cl,i)=>`
+      <div class="charter-clause" id="clause_${cl.id}">
+        <div class="cc-title">${cl.title}</div>
+        <div class="cc-body">${cl.body}</div>
+        ${cl.id==='resource_neutrality'?`<div class="cc-oracle-note">🔮 ORACLE BRIEFING: ${cl.oracle_note}</div>`:''}
+        <div class="cc-pros-cons">
+          <div class="cc-pro">✓ AYE: ${cl.pro}</div>
+          <div class="cc-con">✗ NAY: ${cl.con}</div>
+        </div>
+        <div class="cc-vote">
+          <button class="vote-aye" id="aye_${cl.id}" onclick="voteCharter('${cl.id}','aye')">AYE</button>
+          <button class="vote-nay" id="nay_${cl.id}" onclick="voteCharter('${cl.id}','nay')">NAY</button>
+        </div>
+        <div id="cv_${cl.id}" style="font-size:8px;color:var(--text3);margin-top:4px;letter-spacing:1px;display:none;text-align:right;"></div>
+      </div>`).join('')}
+
+    ${isPerm?`<div style="background:rgba(232,160,26,.08);border:1px solid rgba(232,160,26,.3);padding:14px;margin-top:8px;">
+      <div style="font-size:9px;color:var(--amber);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">PERMANENT MEMBER VETO — USE ONCE</div>
+      <div style="font-size:10px;color:#3a2810;margin-bottom:10px">As Permanent Member, you may strike one clause after voting. This protects your interests but raises the Ideological Gap by 25%.</div>
+      <select id="vetoSelect" style="background:white;border:1px solid #8b6020;padding:6px 10px;font-size:10px;color:#1a0800;width:100%">
+        <option value="">— Do not use veto —</option>
+        ${CHARTER_CLAUSES.map(cl=>`<option value="${cl.id}">${cl.title}</option>`).join('')}
+      </select>
+    </div>`:''}
+
+    <button class="charter-sign-btn" onclick="signCharter()">
+      ${isPerm?'SIGN AND EXERCISE VETO RIGHTS →':'SIGN THE TIPPING POINT ACCORD →'}
+    </button>`;
+
+  showScreen('charterScreen');
+}
+
+function voteCharter(id,vote){
+  G.charterVotes[id]=vote;
+  const ayeBtn=document.getElementById('aye_'+id);
+  const nayBtn=document.getElementById('nay_'+id);
+  if(vote==='aye'){ ayeBtn.classList.add('voted'); nayBtn.classList.remove('voted'); }
+  else{ nayBtn.classList.add('voted'); ayeBtn.classList.remove('voted'); }
+  const cl=CHARTER_CLAUSES.find(c=>c.id===id);
+  const cv=document.getElementById('cv_'+id);
+  if(cv){ cv.style.display='block'; cv.textContent=vote==='aye'?`GSI ${cl.gsi_aye>0?'+':''}${cl.gsi_aye} | Sovereignty ${cl.sov_aye}`:
+    `GSI ${cl.gsi_nay>0?'+':''}${cl.gsi_nay} | Sovereignty +${cl.sov_nay}`; }
+}
+
+function signCharter(){
+  // Apply votes
+  let gsiDelta=0;
+  CHARTER_CLAUSES.forEach(cl=>{
+    const v=G.charterVotes[cl.id];
+    if(v==='aye'){ G.gsi=Math.min(99,G.gsi+cl.gsi_aye); G.sovereignty=Math.max(0,G.sovereignty+cl.sov_aye); gsiDelta+=cl.gsi_aye; }
+    else if(v==='nay'){ G.gsi=Math.max(5,G.gsi+cl.gsi_nay); G.sovereignty=Math.max(0,G.sovereignty+cl.sov_nay); }
+  });
+  // Veto
+  if(G.permanentMember){
+    const vetoSel=document.getElementById('vetoSelect');
+    if(vetoSel&&vetoSel.value){ G.ideologicalGap=Math.min(100,G.ideologicalGap+25); notify('Veto Exercised',`${vetoSel.value} clause struck. Ideological Gap +25%.`,'var(--amber)'); }
+  }
+  const signed=Object.values(G.charterVotes).filter(v=>v==='aye').length;
+  notify('Charter Signed',`${signed}/4 clauses ratified. GSI ${gsiDelta>0?'+':''}${gsiDelta}. Proceeding to Round 9.`,'var(--green)');
+  setTimeout(()=>nextRound('9'),2000);
+}
+
+// ════════════════════════════════════════════════
+// HEGEMONY PATHS
+// ════════════════════════════════════════════════
+function showHegemony(){
+  const power=G.stab.security;
+  const stability=G.gsi;
+  const diplo=G.stab.diplomatic;
+  document.getElementById('hegEyebrow').textContent='Round 11+ · Post-Hegemony Era';
+  document.getElementById('hegTitle').textContent='Your Legacy';
+  document.getElementById('hegSub').textContent=`Based on your performance: Stability ${stability.toFixed(0)} | Power ${power.toFixed(0)} | Diplomacy ${diplo.toFixed(0)}`;
+
+  const paths=HEGEMONY_PATHS.map(p=>{
+    let unlocked=false;
+    if(p.id==='hegemon') unlocked=stability>65&&power>60;
+    if(p.id==='debtor') unlocked=stability<40||power<35;
+    if(p.id==='rogue') unlocked=power>65&&diplo<35;
+    // Always at least one path available
+    if(!HEGEMONY_PATHS.some(pp=>{ let u=false; if(pp.id==='hegemon')u=stability>65&&power>60; if(pp.id==='debtor')u=stability<40||power<35; if(pp.id==='rogue')u=power>65&&diplo<35; return u; })) unlocked=true;
+    return {...p,unlocked};
+  });
+
+  document.getElementById('hegGrid').innerHTML=paths.map(p=>`
+    <div class="heg-card ${p.unlocked?'':'locked'}" id="hc_${p.id}" onclick="${p.unlocked?`selHegemony('${p.id}')`:''}"
+         style="border-color:${p.unlocked?p.color:'var(--border)'}">
+      <div class="heg-icon">${p.icon}</div>
+      <div class="heg-name" style="color:${p.unlocked?p.color:'var(--text3)'}">${p.name}</div>
+      <div class="heg-desc">${p.desc}</div>
+      <div class="heg-reqs">REQ: ${p.req}${!p.unlocked?' · LOCKED — CONDITIONS NOT MET':' · AVAILABLE'}</div>
+      ${p.unlocked?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px">${p.unlocks.map(u=>`<span style="font-size:7px;padding:2px 7px;border:1px solid ${p.color};color:${p.color};letter-spacing:.5px">${u}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+  document.getElementById('hegContinueBtn').disabled=true;
+  showScreen('hegemonyScreen');
+}
+
+function selHegemony(id){
+  G.hegemonyPath=id;
+  document.querySelectorAll('.heg-card').forEach(c=>c.style.outline='none');
+  const el=document.getElementById('hc_'+id);
+  const path=HEGEMONY_PATHS.find(p=>p.id===id);
+  if(el) el.style.outline=`2px solid ${path.color}`;
+  document.getElementById('hegContinueBtn').disabled=false;
+}
+
+function proceedHegemony(){ if(G.hegemonyPath) showFinal(); }
+
+// ════════════════════════════════════════════════
+// FINAL SCREEN
+// ════════════════════════════════════════════════
+function showFinal(){
+  const path=HEGEMONY_PATHS.find(p=>p.id===G.hegemonyPath)||{id:'survivor',name:'THE SURVIVOR',color:'var(--teal)'};
+  const goal=GOALS.find(g=>g.id===(G.goalRevised||G.goal));
+  let prog=G.gsi;
+  if(goal.id==='economic')prog=G.stab.economic;
+  if(goal.id==='peace')prog=G.stab.diplomatic;
+  if(goal.id==='security')prog=G.stab.security;
+  if(goal.id==='nuclear')prog=G.nuclear;
+  const won=prog>=55;
+  const goodDec=G.history.filter(h=>(h.imp.eco||0)+(h.imp.dip||0)>0).length;
+
+  // Final headline
+  let finalHl='';
+  if(G.charterVotes.open_skies==='aye') finalHl+='WORLD GOES BLUE: TIPPING POINT ACCORD SIGNED; ERA OF COOPERATION BEGINS. ';
+  else if(!G.charterVotes.open_skies) finalHl+='THE FRAGILE PEACE: CHARTER REJECTED AS NATIONS CLING TO SOVEREIGNTY; REARMAMENT BEGINS. ';
+  if(G.nuclearActive) finalHl+='THE BRINK: WORLD HOLDS BREATH AS ENRICHMENT CYCLE COMPLETES. ';
+  if(G.hegemonyPath==='hegemon') finalHl=finalHl||'HEGEMON RISES: THE NEW WORLD ORDER CRYSTALLIZES.';
+  if(G.hegemonyPath==='debtor') finalHl=finalHl||'IMF RESCUE: DEBTOR STATE RESTRUCTURES; SOVEREIGNTY SOLD FOR STABILITY.';
+  if(G.hegemonyPath==='rogue') finalHl=finalHl||'ROGUE STATE RISES: THE BOMB AS THE FINAL NEGOTIATION LEVER.';
+  finalHl=finalHl||'THE LONG PEACE BEGINS — FOR HOW LONG, NONE CAN SAY.';
+
+  document.getElementById('finalContent').innerHTML=`
+    <div class="final-result ${won?'win':'lose'}">${won?'MANDATE ACHIEVED':'MANDATE FAILED'}</div>
+    <div class="final-path ${path.id}" style="color:${path.color}">${path.icon} ${path.name} — ${G.nation.name}</div>
+    <div class="final-sub">${finalHl}<br><br>
+    ${won?`${G.role.persona} of ${G.nation.name} proved that the ${G.ideology==='hawk'?'Hawk':'Technocrat'} doctrine, applied with discipline, can hold the global system together — barely.`
+    :`The Tipping Point was reached and crossed. ${G.nation.name} fell on the wrong side of history. Every decision had consequences — the chain of causality found its end.`}
+    ${!won?'<br><br>Play again with different ideology, role, or mandate. The system can be held — it just wasn\'t this time.':''}</div>
+
+    <div class="final-stats">
+      <div class="fs-tile"><div class="fs-val">${Math.round(prog)}</div><div class="fs-lbl">Mandate Score</div></div>
+      <div class="fs-tile"><div class="fs-val">${goodDec}/${G.history.length}</div><div class="fs-lbl">Effective Decisions</div></div>
+      <div class="fs-tile"><div class="fs-val">${G.gsi.toFixed(0)}</div><div class="fs-lbl">Final GSI</div></div>
+    </div>
+
+    <div class="legacy-chain">
+      <div class="lc-title">Causality Map — Your Legacy</div>
+      ${G.history.map(h=>`<div class="lc-item"><div class="lc-rnd">R${h.round} · ${h.decision}</div><div class="lc-text">${buildHeadline(h.sc,h.dec,h.imp).substring(0,100)}...</div></div>`).join('')}
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-red" onclick="restart()">Play Again →</button>
+      <button class="btn" onclick="restart()">Change Ideology →</button>
+    </div>`;
+  showScreen('finalScreen');
+}
+
+// ════════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('hidden',s.id!==id));
+}
+
+let ntTO;
+function notify(title,body,color='var(--green)'){
+  document.getElementById('notif-title').textContent=title;
+  document.getElementById('notif-body').textContent=body;
+  document.getElementById('notif').style.borderLeftColor=color;
+  document.getElementById('notif').classList.add('show');
+  clearTimeout(ntTO); ntTO=setTimeout(()=>document.getElementById('notif').classList.remove('show'),3800);
+}
+
+function flash(txt){
+  const o=document.getElementById('transOverlay');
+  o.textContent=txt; o.classList.add('flash');
+  setTimeout(()=>{ o.classList.remove('flash'); o.textContent=''; },800);
+}
+
+function restart(){
+  clearInterval(G.timerInt);
+  G={role:null,ideology:null,nation:null,goal:null,goalRevised:null,round:1,phase:'standard',decision:null,reasoning:'',timer:180,timerInt:null,stab:{economic:70,diplomatic:65,security:60,domestic:72},gsi:72,prevGsi:72,resilience:80,nuclear:0,sovereignty:100,score:0,history:[],nations:[],actLog:[],warMode:false,ideologicalGap:30,charterVotes:{},permanentMember:false,hegemonyPath:null,fogOfWar:false,nuclearActive:false};
+  document.getElementById('gameScreen').classList.remove('war-mode');
+  document.getElementById('warOverlay').style.display='none';
+  showScreen('lobbyScreen');
+  document.getElementById('lobbyBtn').disabled=true;
+  document.getElementById('lobbyPrompt').textContent='Select your operative';
+  document.querySelectorAll('.humanoid').forEach(h=>h.classList.remove('sel'));
+}
+
+// INIT
+showScreen('lobbyScreen');
+</script>
+</body>
+</html>
