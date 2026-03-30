@@ -1,0 +1,17 @@
+{
+  "name": "Tipping Point",
+  "short_name": "TippingPoint",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#04050a",
+  "theme_color": "#0d1018",
+  "description": "A high-stakes geopolitical simulation where structural power, economic theory, and human friction collide.",
+  "icons": [
+    {
+      "src": "Tipping-Point.Logo",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
