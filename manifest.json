@@ -8,7 +8,7 @@
   "description": "A high-stakes geopolitical simulation where structural power, economic theory, and human friction collide.",
   "icons": [
     {
-      "src": "Tipping-Point.Logo",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
